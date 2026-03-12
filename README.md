@@ -71,3 +71,5 @@ export default defineConfig([
   },
 ])
 ```
+
+We are also using Tailwindcss and Path Aliases

@@ -1,0 +1,86 @@
+import type { Event } from '@/types/event'
+
+export const MOCK_EVENTS: Event[] = [
+  {
+    id: 1,
+    title: 'Ceremonia de Bienvenida a Nuevos Estudiantes',
+    description:
+      'Acto oficial de recepción a los estudiantes de primer semestre. Conoce las instalaciones, las facultades y entérate de todo lo que la Universidad de Antioquia tiene para ti.',
+    categoryId: 'Académico',
+    pubDate: '2026-01-10T08:00:00',
+    dateStart: '2026-01-20T09:00:00',
+    dateEnd: '2026-01-20T12:00:00',
+    managerId: 1,
+    virtual: false,
+    imageUrl: 'https://placehold.co/600x300/3b82f6/ffffff?text=Bienvenida',
+    status: 'active',
+  },
+  {
+    id: 2,
+    title: 'Tour Virtual por el Campus Universitario',
+    description:
+      'Recorre las instalaciones más emblemáticas de Ciudad Universitaria desde tu dispositivo. Aprende dónde están los bloques, cafeterías, biblioteca y servicios de bienestar.',
+    categoryId: 'Recorrido',
+    pubDate: '2026-01-12T08:00:00',
+    dateStart: '2026-01-22T14:00:00',
+    managerId: 1,
+    virtual: true,
+    link: 'https://meet.google.com/placeholder',
+    imageUrl: 'https://placehold.co/600x300/0d9488/ffffff?text=Tour+Campus',
+    status: 'active',
+  },
+  {
+    id: 3,
+    title: 'Taller de Salud Mental: Manejo del Estrés',
+    description:
+      'Espacio orientado a estudiantes nuevos para aprender herramientas prácticas de gestión emocional y estrategias de afrontamiento ante los desafíos del entorno universitario.',
+    categoryId: 'Bienestar',
+    pubDate: '2026-01-15T08:00:00',
+    dateStart: '2026-01-25T10:00:00',
+    dateEnd: '2026-01-25T12:00:00',
+    managerId: 2,
+    virtual: false,
+    status: 'active',
+  },
+  {
+    id: 4,
+    title: 'Jornada de Carnetización',
+    description:
+      'Expedición del carné universitario para nuevos estudiantes. Recuerda traer tu documento de identidad y el recibo de matrícula. El proceso tarda aproximadamente 20 minutos.',
+    categoryId: 'Administrativo',
+    pubDate: '2026-01-16T08:00:00',
+    dateStart: '2026-01-28T08:00:00',
+    dateEnd: '2026-01-28T16:00:00',
+    managerId: 1,
+    virtual: false,
+    status: 'active',
+  },
+  {
+    id: 5,
+    title: 'Festival Deportivo de Integración',
+    description:
+      'Actividades deportivas para conocer a tus compañeros: fútbol, baloncesto y voleibol. No se requiere experiencia previa, solo ganas de compartir y divertirte.',
+    categoryId: 'Deporte',
+    pubDate: '2026-01-18T08:00:00',
+    dateStart: '2026-02-02T14:00:00',
+    dateEnd: '2026-02-02T17:00:00',
+    managerId: 2,
+    virtual: false,
+    imageUrl: 'https://placehold.co/600x300/f97316/ffffff?text=Festival+Deportivo',
+    status: 'active',
+  },
+  {
+    id: 6,
+    title: 'Muestra Cultural Universitaria',
+    description:
+      'Descubre los grupos artísticos y culturales de la universidad: teatro, música, danza y artes plásticas. Una oportunidad única para integrarte a la vida cultural del campus.',
+    categoryId: 'Cultura',
+    pubDate: '2026-01-20T08:00:00',
+    dateStart: '2026-02-05T16:00:00',
+    dateEnd: '2026-02-05T20:00:00',
+    managerId: 1,
+    virtual: false,
+    imageUrl: 'https://placehold.co/600x300/8b5cf6/ffffff?text=Muestra+Cultural',
+    status: 'active',
+  },
+]

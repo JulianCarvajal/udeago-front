@@ -1,4 +1,5 @@
 import type { Event } from '@/types/event'
+import { Link } from 'react-router-dom'
 
 // Colores por categoría. Se expanden cuando lleguen nuevas categorías desde la BD.
 const CATEGORY_STYLES: Record<string, { badge: string; bg: string }> = {
@@ -29,41 +30,44 @@ export function EventCard({ event }: EventCardProps) {
   const styles = CATEGORY_STYLES[event.categoryId] ?? DEFAULT_STYLE
 
   return (
-    <article className="rounded-xl shadow-sm overflow-hidden bg-white border border-gray-100 cursor-pointer hover:shadow-md transition-shadow duration-200">
+    <Link
+      to={`/events/${event.id}`}
+      className="block rounded-xl shadow-sm overflow-hidden bg-white border border-gray-100 cursor-pointer hover:shadow-md transition-all duration-200 md:hover:-translate-y-0.5"
+    >
       {/* Imagen: si no hay imageUrl se usa un placeholder de color de la categoría */}
       {event.imageUrl ? (
         <img
           src={event.imageUrl}
           alt={event.title}
-          className="w-full h-40 object-cover"
+          className="w-full h-40 md:h-44 object-cover"
         />
       ) : (
-        <div className={`w-full h-36 ${styles.bg} flex items-center justify-center opacity-80`}>
+        <div className={`w-full h-36 md:h-44 ${styles.bg} flex items-center justify-center opacity-80`}>
           <span className="text-5xl select-none">📅</span>
         </div>
       )}
 
-      <div className="p-4">
+      <div className="p-4 md:p-5">
         {/* Fila: badge de categoría + fecha de inicio */}
         <div className="flex items-center justify-between mb-2">
           <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${styles.badge}`}>
             {event.categoryId}
           </span>
-          <span className="text-xs text-gray-400">{formatDate(event.dateStart)}</span>
+          <span className="text-xs md:text-sm text-gray-400">{formatDate(event.dateStart)}</span>
         </div>
 
         {/* Título */}
-        <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1">
+        <h3 className="font-semibold text-gray-900 text-sm md:text-base leading-snug mb-1">
           {event.title}
         </h3>
 
         {/* Descripción truncada */}
-        <p className="text-xs text-gray-500 line-clamp-2 mb-3">
+        <p className="text-xs md:text-sm text-gray-500 line-clamp-2 md:line-clamp-3 mb-3">
           {event.description}
         </p>
 
         {/* Modalidad */}
-        <div className="flex items-center text-xs text-gray-400">
+        <div className="flex items-center text-xs md:text-sm text-gray-400">
           {event.virtual ? (
             <>
               <span>🔗</span>
@@ -80,6 +84,6 @@ export function EventCard({ event }: EventCardProps) {
           )}
         </div>
       </div>
-    </article>
+    </Link>
   )
 }

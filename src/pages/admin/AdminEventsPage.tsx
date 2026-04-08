@@ -1,7 +1,43 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MOCK_EVENTS } from '@/features/events/mocks/events.mock'
+import { listEvents } from '@/services/events.service'
+import type { Event } from '@/types/event'
 
 export function AdminEventsPage() {
+  const [events, setEvents] = useState<Event[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadEvents() {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const data = await listEvents()
+        if (isMounted) {
+          setEvents(data)
+        }
+      } catch {
+        if (isMounted) {
+          setError('Unable to load events at the moment.')
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadEvents()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   return (
     <section className="max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4 mb-5 md:mb-6">
@@ -31,19 +67,47 @@ export function AdminEventsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
-              {MOCK_EVENTS.map((event) => (
-                <tr key={event.id}>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{event.title}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{event.categoryId}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(new Date(event.dateStart))}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{event.virtual ? 'Virtual' : 'On-site'}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <Link to={`/admin/events/${event.id}/edit`} className="font-medium text-green-700 hover:text-green-800">
-                      Edit
-                    </Link>
+              {isLoading && (
+                <tr>
+                  <td className="px-4 py-6 text-sm text-gray-500" colSpan={5}>
+                    Loading events...
                   </td>
                 </tr>
-              ))}
+              )}
+
+              {!isLoading && error && (
+                <tr>
+                  <td className="px-4 py-6 text-sm text-red-600" colSpan={5}>
+                    {error}
+                  </td>
+                </tr>
+              )}
+
+              {!isLoading && !error && events.length === 0 && (
+                <tr>
+                  <td className="px-4 py-6 text-sm text-gray-500" colSpan={5}>
+                    No events available yet.
+                  </td>
+                </tr>
+              )}
+
+              {!isLoading &&
+                !error &&
+                events.map((event) => (
+                  <tr key={event.id}>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{event.title}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{event.categoryId}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(new Date(event.dateStart))}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{event.virtual ? 'Virtual' : 'On-site'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <Link to={`/admin/events/${event.id}/edit`} className="font-medium text-green-700 hover:text-green-800">
+                        Edit
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

@@ -1,5 +1,6 @@
-import { Home, Megaphone, Clapperboard, type LucideIcon } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import { Home, Megaphone, Clapperboard, LogIn, type LucideIcon } from 'lucide-react'
+import { NavLink, Link } from 'react-router-dom'
+import { useAuth } from '@/auth/useAuth'
 
 interface NavItem {
   to: string
@@ -14,6 +15,10 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export function BottomNav() {
+  const { isAuthenticated, status } = useAuth()
+  const adminTo = isAuthenticated ? '/admin' : '/admin/login'
+  const adminLabel = status === 'loading' ? 'Admin' : isAuthenticated ? 'Panel' : 'Admin'
+
   return (
     <nav className="shrink-0 bg-white border-t border-gray-100">
       <div className="flex md:px-4 lg:px-8">
@@ -38,7 +43,17 @@ export function BottomNav() {
             )}
           </NavLink>
         ))}
+
+        <Link
+          to={adminTo}
+          className="flex-1 flex flex-col items-center gap-0.5 py-2.5 md:py-3 text-gray-400 hover:text-gray-600 transition-colors group"
+          title={isAuthenticated ? 'Admin dashboard' : 'Admin access'}
+        >
+          <LogIn size={22} strokeWidth={1.5} className="group-hover:text-green-700" />
+          <span className="text-xs md:text-sm font-normal text-[10px] md:text-xs">{adminLabel}</span>
+        </Link>
       </div>
     </nav>
   )
 }
+

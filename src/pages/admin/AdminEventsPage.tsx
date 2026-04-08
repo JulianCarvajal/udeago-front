@@ -1,12 +1,26 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listEvents } from '@/services/events.service'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { deleteEvent, listEvents } from '@/services/events.service'
 import type { Event } from '@/types/event'
 
 export function AdminEventsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  useEffect(() => {
+    const locationState = location.state as { notice?: string } | null
+    if (locationState?.notice) {
+      setNotice(locationState.notice)
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.pathname, location.state, navigate])
 
   useEffect(() => {
     let isMounted = true
@@ -38,6 +52,33 @@ export function AdminEventsPage() {
     }
   }, [])
 
+  const handleDeleteEvent = async (eventItem: Event) => {
+    const confirmed = window.confirm(`Delete "${eventItem.title}"? This action cannot be undone.`)
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingId(eventItem.id)
+    setError(null)
+    setNotice(null)
+
+    try {
+      const deleted = await deleteEvent(eventItem.id)
+
+      if (!deleted) {
+        setError('The selected event no longer exists.')
+        return
+      }
+
+      setEvents((current) => current.filter((item) => item.id !== eventItem.id))
+      setNotice(`Event "${eventItem.title}" deleted successfully.`)
+    } catch {
+      setError('Unable to delete event right now. Please try again.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <section className="max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4 mb-5 md:mb-6">
@@ -53,6 +94,18 @@ export function AdminEventsPage() {
           New event
         </Link>
       </div>
+
+      {notice && (
+        <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-3 py-2 text-sm text-green-800">
+          {notice}
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -78,7 +131,7 @@ export function AdminEventsPage() {
               {!isLoading && error && (
                 <tr>
                   <td className="px-4 py-6 text-sm text-red-600" colSpan={5}>
-                    {error}
+                    Unable to load events at the moment.
                   </td>
                 </tr>
               )}
@@ -102,9 +155,19 @@ export function AdminEventsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{event.virtual ? 'Virtual' : 'On-site'}</td>
                     <td className="px-4 py-3 text-sm">
-                      <Link to={`/admin/events/${event.id}/edit`} className="font-medium text-green-700 hover:text-green-800">
-                        Edit
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link to={`/admin/events/${event.id}/edit`} className="font-medium text-green-700 hover:text-green-800">
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={deletingId === event.id}
+                          onClick={() => void handleDeleteEvent(event)}
+                          className="font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {deletingId === event.id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

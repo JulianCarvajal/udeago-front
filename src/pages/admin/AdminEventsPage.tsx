@@ -1,0 +1,53 @@
+import { Link } from 'react-router-dom'
+import { MOCK_EVENTS } from '@/features/events/mocks/events.mock'
+
+export function AdminEventsPage() {
+  return (
+    <section className="max-w-5xl mx-auto">
+      <div className="flex items-start justify-between gap-4 mb-5 md:mb-6">
+        <div>
+          <h1 className="text-lg md:text-2xl font-bold text-gray-900">Events management</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">Review, edit and publish events from a table-oriented view.</p>
+        </div>
+
+        <Link
+          to="/admin/events/new"
+          className="shrink-0 rounded-xl bg-green-700 px-3 py-2 text-xs md:text-sm font-semibold text-white hover:bg-green-800 transition-colors"
+        >
+          New event
+        </Link>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-100 text-left">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Title</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Category</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Mode</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {MOCK_EVENTS.map((event) => (
+                <tr key={event.id}>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{event.title}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{event.categoryId}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(new Date(event.dateStart))}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{event.virtual ? 'Virtual' : 'On-site'}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <Link to={`/admin/events/${event.id}/edit`} className="font-medium text-green-700 hover:text-green-800">
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )
+}

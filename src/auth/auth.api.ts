@@ -1,53 +1,67 @@
-import type { AuthUser } from '@/auth/auth.types'
-import { isDevelopment, mockFetchCurrentUser, mockLogoutAdmin, mockStartAdminOAuthLogin } from '@/auth/auth.dev.mock'
+import { buildAuthSessionFromCallback, buildAuthSessionFromPayload, clearAuthSession, getStoredAuthSession, getStoredAuthToken, saveAuthSession } from '@/auth/auth.session'
+import type { AuthSession } from '@/auth/auth.types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
+const FRONTEND_CALLBACK_PATH = '/admin/auth/callback'
 
-export async function fetchCurrentUser(): Promise<AuthUser | null> {
-  // En desarrollo, usar mocks
-  if (isDevelopment()) {
-    return mockFetchCurrentUser()
-  }
-
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
-    credentials: 'include',
-  })
-
-  if (response.status === 401) {
-    return null
-  }
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch current user')
-  }
-
-  return response.json() as Promise<AuthUser>
+export function getAuthToken(): string | null {
+  return getStoredAuthToken()
 }
 
 export async function startAdminOAuthLogin(): Promise<void> {
-  // En desarrollo, usar mock
-  if (isDevelopment()) {
-    await mockStartAdminOAuthLogin()
-    // Redirigir al callback after mock login
-    window.location.href = `${window.location.origin}/admin/auth/callback`
-    return
+  const callbackUrl = new URL(FRONTEND_CALLBACK_PATH, window.location.origin).toString()
+  const loginUrl = new URL('/auth/google', API_BASE_URL)
+  loginUrl.searchParams.set('redirect_uri', callbackUrl)
+  window.location.assign(loginUrl.toString())
+}
+
+export async function completeAdminOAuthCallback(location: Location = window.location): Promise<AuthSession | null> {
+  const callbackSession = buildAuthSessionFromCallback(location)
+
+  if (callbackSession) {
+    saveAuthSession(callbackSession)
+    return callbackSession
   }
 
-  const callbackUrl = `${window.location.origin}/admin/auth/callback`
-  const loginUrl = new URL(`${API_BASE_URL}/auth/oauth/admin`, window.location.origin)
-  loginUrl.searchParams.set('redirect_uri', callbackUrl)
-  window.location.href = loginUrl.toString()
+  if (!location.search) {
+    return getStoredAuthSession()
+  }
+
+  const response = await fetch(`${API_BASE_URL}/auth/google/callback${location.search}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  const payload = (await response.json()) as {
+    access_token?: string
+    accessToken?: string
+    token?: string
+    user?: unknown
+    expires_in?: number
+    expiresIn?: number
+  }
+
+  const normalizedSession = buildAuthSessionFromPayload(payload)
+
+  if (!normalizedSession) {
+    return null
+  }
+
+  saveAuthSession(normalizedSession)
+  return normalizedSession
+}
+
+export function hydrateStoredAuthSession(): AuthSession | null {
+  return getStoredAuthSession()
 }
 
 export async function logoutAdmin(): Promise<void> {
-  // En desarrollo, usar mock
-  if (isDevelopment()) {
-    await mockLogoutAdmin()
-    return
-  }
-
-  await fetch(`${API_BASE_URL}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  })
+  clearAuthSession()
 }

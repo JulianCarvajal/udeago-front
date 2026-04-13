@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { fetchCurrentUser, logoutAdmin, startAdminOAuthLogin } from '@/auth/auth.api'
+import { hydrateStoredAuthSession, logoutAdmin, startAdminOAuthLogin } from '@/auth/auth.api'
+import { isAdminRole } from '@/auth/auth.session'
 import type { AuthStatus, AuthUser } from '@/auth/auth.types'
 import { AuthContext } from '@/auth/useAuth'
 
@@ -25,7 +26,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshSession = useCallback(async () => {
     try {
       setStatus('loading')
-      const currentUser = await fetchCurrentUser()
+      const currentSession = hydrateStoredAuthSession()
+      const currentUser = currentSession?.user ?? null
       setUser(currentUser)
       setStatus(currentUser ? 'authenticated' : 'anonymous')
       return currentUser
@@ -56,7 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       status,
       isAuthenticated: status === 'authenticated' && user !== null,
-      isAdmin: status === 'authenticated' && user?.role === 'admin',
+      isAdmin: status === 'authenticated' && isAdminRole(user?.role),
       isLoading: status === 'loading',
       refreshSession,
       login,

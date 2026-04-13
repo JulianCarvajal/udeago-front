@@ -1,16 +1,26 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { completeAdminOAuthCallback } from '@/auth/auth.api'
 import { useAuth } from '@/auth/useAuth'
+import { isAdminRole } from '@/auth/auth.session'
+import { AdminLoadingPage } from '@/pages/admin/AdminLoadingPage'
 
 export function AdminCallbackPage() {
   const { refreshSession } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
+    let isMounted = true
+
     const run = async () => {
+      await completeAdminOAuthCallback()
       const currentUser = await refreshSession()
 
-      if (currentUser?.role === 'admin') {
+      if (!isMounted) {
+        return
+      }
+
+      if (isAdminRole(currentUser?.role)) {
         navigate('/admin', { replace: true })
         return
       }
@@ -19,7 +29,11 @@ export function AdminCallbackPage() {
     }
 
     void run()
+
+    return () => {
+      isMounted = false
+    }
   }, [navigate, refreshSession])
 
-  return null
+  return <AdminLoadingPage />
 }

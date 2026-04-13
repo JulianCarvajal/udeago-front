@@ -36,7 +36,7 @@ export function AdminLoginPage() {
           disabled={status === 'loading'}
           className="w-full rounded-xl bg-green-700 px-4 py-3 text-sm font-semibold text-white hover:bg-green-800 transition-colors disabled:opacity-60"
         >
-          Continue with OAuth
+          Continue with Google
         </button>
       </div>
     </section>

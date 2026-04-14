@@ -10,8 +10,8 @@ import type { Event } from '@/types/event'
 
 interface FormState {
   title: string
-  categoryId: string
-  status: EventUpsertInput['status']
+  categoryName: string
+  statusValue: string
   virtual: boolean
   dateStart: string
   dateEnd: string
@@ -19,6 +19,8 @@ interface FormState {
   link: string
   imageUrl: string
   videoUrl: string
+  location: string
+  capacity: string
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>
@@ -32,17 +34,18 @@ const CATEGORY_OPTIONS = [
   'Recorrido',
 ]
 
-const STATUS_OPTIONS: Array<{ value: EventUpsertInput['status']; label: string }> = [
-  { value: 'active', label: 'Active' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'cancelled', label: 'Cancelled' },
+const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'ACTIVO', label: 'Activo' },
+  { value: 'PROGRAMADO', label: 'Programado' },
+  { value: 'CANCELADO', label: 'Cancelado' },
+  { value: 'INACTIVO', label: 'Inactivo' },
 ]
 
 function emptyForm(): FormState {
   return {
     title: '',
-    categoryId: '',
-    status: 'draft',
+    categoryName: '',
+    statusValue: 'PROGRAMADO',
     virtual: false,
     dateStart: '',
     dateEnd: '',
@@ -50,6 +53,8 @@ function emptyForm(): FormState {
     link: '',
     imageUrl: '',
     videoUrl: '',
+    location: '',
+    capacity: '',
   }
 }
 
@@ -70,8 +75,8 @@ function toInputDateTime(value?: string): string {
 function mapFormFromEvent(event: Event): FormState {
   return {
     title: event.title,
-    categoryId: event.categoryId,
-    status: event.status,
+    categoryName: event.category?.name ?? '',
+    statusValue: event.status?.status ?? 'PROGRAMADO',
     virtual: event.virtual,
     dateStart: toInputDateTime(event.dateStart),
     dateEnd: toInputDateTime(event.dateEnd),
@@ -79,6 +84,8 @@ function mapFormFromEvent(event: Event): FormState {
     link: event.link ?? '',
     imageUrl: event.imageUrl ?? '',
     videoUrl: event.videoUrl ?? '',
+    location: event.location ?? '',
+    capacity: event.capacity ? String(event.capacity) : '',
   }
 }
 
@@ -89,8 +96,8 @@ function validateForm(form: FormState): FormErrors {
     errors.title = 'Title is required.'
   }
 
-  if (!form.categoryId.trim()) {
-    errors.categoryId = 'Category is required.'
+  if (!form.categoryName.trim()) {
+    errors.categoryName = 'Category is required.'
   }
 
   if (!form.dateStart) {
@@ -115,8 +122,8 @@ function validateForm(form: FormState): FormErrors {
 function toPayload(form: FormState): EventUpsertInput {
   return {
     title: form.title.trim(),
-    categoryId: form.categoryId,
-    status: form.status,
+    categoryName: form.categoryName,
+    statusValue: form.statusValue,
     virtual: form.virtual,
     dateStart: new Date(form.dateStart).toISOString(),
     dateEnd: form.dateEnd ? new Date(form.dateEnd).toISOString() : undefined,
@@ -124,6 +131,8 @@ function toPayload(form: FormState): EventUpsertInput {
     link: form.link.trim() || undefined,
     imageUrl: form.imageUrl.trim() || undefined,
     videoUrl: form.videoUrl.trim() || undefined,
+    location: form.location.trim() || undefined,
+    capacity: form.capacity.trim() ? Number(form.capacity) : undefined,
   }
 }
 
@@ -139,14 +148,14 @@ export function AdminEventFormPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isNotFound, setIsNotFound] = useState(false)
 
-  const parsedEventId = useMemo(() => Number(eventId), [eventId])
+  const parsedEventId = useMemo(() => eventId ?? '', [eventId])
 
   useEffect(() => {
     if (!isEditMode) {
       return
     }
 
-    if (Number.isNaN(parsedEventId)) {
+    if (!parsedEventId) {
       setIsNotFound(true)
       setIsInitialLoading(false)
       return
@@ -310,8 +319,8 @@ export function AdminEventFormPage() {
             </label>
             <select
               id="categoryId"
-              value={form.categoryId}
-              onChange={(e) => handleFieldChange('categoryId', e.target.value)}
+              value={form.categoryName}
+              onChange={(e) => handleFieldChange('categoryName', e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
             >
               <option value="">Select category</option>
@@ -321,7 +330,7 @@ export function AdminEventFormPage() {
                 </option>
               ))}
             </select>
-            {errors.categoryId && <p className="text-xs text-red-600">{errors.categoryId}</p>}
+            {errors.categoryName && <p className="text-xs text-red-600">{errors.categoryName}</p>}
           </div>
 
           <div className="space-y-2">
@@ -330,8 +339,8 @@ export function AdminEventFormPage() {
             </label>
             <select
               id="status"
-              value={form.status}
-              onChange={(e) => handleFieldChange('status', e.target.value as EventUpsertInput['status'])}
+              value={form.statusValue}
+              onChange={(e) => handleFieldChange('statusValue', e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
             >
               {STATUS_OPTIONS.map((status) => (
@@ -340,6 +349,35 @@ export function AdminEventFormPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="location" className="text-xs md:text-sm font-medium text-gray-700">
+              Location (optional)
+            </label>
+            <input
+              id="location"
+              type="text"
+              value={form.location}
+              onChange={(e) => handleFieldChange('location', e.target.value)}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+              placeholder="Bloque 16, auditorio principal"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="capacity" className="text-xs md:text-sm font-medium text-gray-700">
+              Capacity (optional)
+            </label>
+            <input
+              id="capacity"
+              type="number"
+              min={1}
+              value={form.capacity}
+              onChange={(e) => handleFieldChange('capacity', e.target.value)}
+              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+              placeholder="200"
+            />
           </div>
 
           <div className="space-y-2">

@@ -1,28 +1,48 @@
+interface RelationApiDto {
+  id?: string
+  _id?: string
+  name?: string
+  status?: string
+  rol?: string
+  email?: string
+}
+
 export interface EventApiDto {
-  id: number
+  id: string
   title: string
   description: string
-  category: string | null
-  pub_date: string
-  date_start: string
-  date_end: string | null
-  manager: number
+  pubDate?: string
+  pub_date?: string
+  dateStart?: string
+  date_start?: string
+  dateEnd?: string | null
+  date_end?: string | null
   virtual: boolean
-  link: string | null
-  image_url: string | null
-  video: string | null
-  status: string
+  link?: string | null
+  image?: string | null
+  image_url?: string | null
+  video?: string | null
+  location?: string | null
+  capacity?: number | null
+  category?: RelationApiDto | string | null
+  status?: RelationApiDto | string | null
+  manager?: RelationApiDto | string | null
+  deleted_at?: string | null
+  deletedAt?: string | null
 }
 
 export interface EventApiUpsertDto {
   title: string
   description: string
-  category: string | null
-  date_start: string
-  date_end: string | null
+  pubDate?: string
+  dateStart: string
+  dateEnd?: string | null
   virtual: boolean
-  link: string | null
-  image_url: string | null
-  video: string | null
-  status: string
+  link?: string | null
+  image?: string | null
+  video?: string | null
+  location?: string | null
+  capacity?: number | null
+  category?: string | null
+  status?: string | null
 }

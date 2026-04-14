@@ -12,7 +12,7 @@ export function AdminEventsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     const locationState = location.state as { notice?: string } | null
@@ -149,7 +149,7 @@ export function AdminEventsPage() {
                 events.map((event) => (
                   <tr key={event.id}>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{event.title}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{event.categoryId}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{event.category?.name ?? 'General'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(new Date(event.dateStart))}
                     </td>

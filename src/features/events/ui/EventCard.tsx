@@ -27,7 +27,8 @@ interface EventCardProps {
 }
 
 export function EventCard({ event }: EventCardProps) {
-  const styles = CATEGORY_STYLES[event.categoryId] ?? DEFAULT_STYLE
+  const categoryName = event.category?.name ?? 'General'
+  const styles = CATEGORY_STYLES[categoryName] ?? DEFAULT_STYLE
 
   return (
     <Link
@@ -51,7 +52,7 @@ export function EventCard({ event }: EventCardProps) {
         {/* Fila: badge de categoría + fecha de inicio */}
         <div className="flex items-center justify-between mb-2">
           <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${styles.badge}`}>
-            {event.categoryId}
+            {categoryName}
           </span>
           <span className="text-xs md:text-sm text-gray-400">{formatDate(event.dateStart)}</span>
         </div>

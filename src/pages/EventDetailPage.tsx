@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { MOCK_EVENTS } from '@/features/events/mocks/events.mock'
+import { getEventById } from '@/services/events.service'
+import type { Event } from '@/types/event'
 
 function formatDateRange(start: string, end?: string): string {
   const formatter = new Intl.DateTimeFormat('es-CO', {
@@ -26,7 +28,69 @@ function formatDateRange(start: string, end?: string): string {
 
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
-  const event = MOCK_EVENTS.find((item) => item.id === Number(eventId))
+  const [event, setEvent] = useState<Event | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadEvent() {
+      if (!eventId) {
+        setIsLoading(false)
+        setEvent(null)
+        return
+      }
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const row = await getEventById(eventId)
+
+        if (isMounted) {
+          setEvent(row)
+        }
+      } catch {
+        if (isMounted) {
+          setError('Unable to load event details right now.')
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadEvent()
+
+    return () => {
+      isMounted = false
+    }
+  }, [eventId])
+
+  if (isLoading) {
+    return (
+      <section className="px-4 py-5 md:px-6 md:py-6">
+        <div className="max-w-3xl">
+          <p className="text-sm md:text-base font-semibold text-gray-700">Loading event...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className="px-4 py-5 md:px-6 md:py-6">
+        <div className="max-w-3xl">
+          <p className="text-sm md:text-base font-semibold text-red-700">{error}</p>
+          <Link to="/" className="text-sm font-medium text-green-700 mt-3 inline-flex">
+            Back to home
+          </Link>
+        </div>
+      </section>
+    )
+  }
 
   if (!event) {
     return (
@@ -62,7 +126,7 @@ export function EventDetailPage() {
         <div className="p-4 md:p-5 lg:col-span-3">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
-              {event.categoryId}
+              {event.category?.name ?? 'General'}
             </span>
             <span className="text-xs md:text-sm text-gray-400">{event.virtual ? 'Virtual' : 'On-site'}</span>
           </div>

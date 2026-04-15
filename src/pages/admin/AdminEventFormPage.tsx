@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
+  EventApiError,
   createEvent,
   getEventById,
   updateEvent,
   type EventUpsertInput,
 } from '@/services/events.service'
+import { listCategories, type CategoryOption } from '@/services/categories.service'
+import { listStatuses, type StatusOption } from '@/services/status.service'
 import type { Event } from '@/types/event'
 
 interface FormState {
   title: string
-  categoryName: string
-  statusValue: string
+  categoryId: string
+  statusId: string
   virtual: boolean
   dateStart: string
   dateEnd: string
@@ -25,27 +28,13 @@ interface FormState {
 
 type FormErrors = Partial<Record<keyof FormState, string>>
 
-const CATEGORY_OPTIONS = [
-  'Académico',
-  'Administrativo',
-  'Bienestar',
-  'Cultura',
-  'Deporte',
-  'Recorrido',
-]
-
-const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'ACTIVO', label: 'Activo' },
-  { value: 'PROGRAMADO', label: 'Programado' },
-  { value: 'CANCELADO', label: 'Cancelado' },
-  { value: 'INACTIVO', label: 'Inactivo' },
-]
+const DEFAULT_STATUS_ID = ''
 
 function emptyForm(): FormState {
   return {
     title: '',
-    categoryName: '',
-    statusValue: 'PROGRAMADO',
+    categoryId: '',
+    statusId: DEFAULT_STATUS_ID,
     virtual: false,
     dateStart: '',
     dateEnd: '',
@@ -75,8 +64,8 @@ function toInputDateTime(value?: string): string {
 function mapFormFromEvent(event: Event): FormState {
   return {
     title: event.title,
-    categoryName: event.category?.name ?? '',
-    statusValue: event.status?.status ?? 'PROGRAMADO',
+    categoryId: event.category?.id ?? '',
+    statusId: event.status?.id ?? DEFAULT_STATUS_ID,
     virtual: event.virtual,
     dateStart: toInputDateTime(event.dateStart),
     dateEnd: toInputDateTime(event.dateEnd),
@@ -96,8 +85,12 @@ function validateForm(form: FormState): FormErrors {
     errors.title = 'Title is required.'
   }
 
-  if (!form.categoryName.trim()) {
-    errors.categoryName = 'Category is required.'
+  if (!form.categoryId.trim()) {
+    errors.categoryId = 'Category is required.'
+  }
+
+  if (!form.statusId.trim()) {
+    errors.statusId = 'Status is required.'
   }
 
   if (!form.dateStart) {
@@ -122,8 +115,8 @@ function validateForm(form: FormState): FormErrors {
 function toPayload(form: FormState): EventUpsertInput {
   return {
     title: form.title.trim(),
-    categoryName: form.categoryName,
-    statusValue: form.statusValue,
+    categoryId: form.categoryId,
+    statusId: form.statusId,
     virtual: form.virtual,
     dateStart: new Date(form.dateStart).toISOString(),
     dateEnd: form.dateEnd ? new Date(form.dateEnd).toISOString() : undefined,
@@ -147,8 +140,50 @@ export function AdminEventFormPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isNotFound, setIsNotFound] = useState(false)
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([])
+  const [statusOptions, setStatusOptions] = useState<StatusOption[]>([])
 
   const parsedEventId = useMemo(() => eventId ?? '', [eventId])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadMetadataOptions() {
+      try {
+        const [categories, statuses] = await Promise.all([listCategories(), listStatuses()])
+
+        if (!isMounted) {
+          return
+        }
+
+        setCategoryOptions(categories)
+        setStatusOptions(statuses)
+
+        setForm((current) => {
+          if (current.statusId || statuses.length === 0) {
+            return current
+          }
+
+          const programmed = statuses.find((row) => row.status.toUpperCase() === 'PROGRAMADO')
+          return {
+            ...current,
+            statusId: programmed?.id ?? statuses[0]?.id ?? '',
+          }
+        })
+      } catch {
+        if (isMounted) {
+          setCategoryOptions([])
+          setStatusOptions([])
+        }
+      }
+    }
+
+    void loadMetadataOptions()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!isEditMode) {
@@ -248,7 +283,22 @@ export function AdminEventFormPage() {
         replace: true,
         state: { notice: `Event "${created.title}" created successfully.` },
       })
-    } catch {
+    } catch (err) {
+      if (err instanceof EventApiError) {
+        if (err.status === 401) {
+          setSubmitError('Your session has expired. Please sign in again.')
+          return
+        }
+
+        if (err.status === 403) {
+          setSubmitError('Only ADMIN users can create or edit events.')
+          return
+        }
+
+        setSubmitError(err.message || 'Unable to save event right now. Please try again.')
+        return
+      }
+
       setSubmitError('Unable to save event right now. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -319,18 +369,18 @@ export function AdminEventFormPage() {
             </label>
             <select
               id="categoryId"
-              value={form.categoryName}
-              onChange={(e) => handleFieldChange('categoryName', e.target.value)}
+              value={form.categoryId}
+              onChange={(e) => handleFieldChange('categoryId', e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
             >
               <option value="">Select category</option>
-              {CATEGORY_OPTIONS.map((category) => (
-                <option key={category} value={category}>
-                  {category}
+              {categoryOptions.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
-            {errors.categoryName && <p className="text-xs text-red-600">{errors.categoryName}</p>}
+            {errors.categoryId && <p className="text-xs text-red-600">{errors.categoryId}</p>}
           </div>
 
           <div className="space-y-2">
@@ -339,16 +389,18 @@ export function AdminEventFormPage() {
             </label>
             <select
               id="status"
-              value={form.statusValue}
-              onChange={(e) => handleFieldChange('statusValue', e.target.value)}
+              value={form.statusId}
+              onChange={(e) => handleFieldChange('statusId', e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
             >
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
+              <option value="">Select status</option>
+              {statusOptions.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.status}
                 </option>
               ))}
             </select>
+            {errors.statusId && <p className="text-xs text-red-600">{errors.statusId}</p>}
           </div>
 
           <div className="space-y-2">

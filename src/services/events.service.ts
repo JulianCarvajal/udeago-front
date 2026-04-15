@@ -1,16 +1,29 @@
-import { mapEventFromApi, mapEventsFromApi, mapEventToApiUpsertDto } from '@/features/events/mappers/event.mapper'
-import type { EventApiDto } from '@/features/events/api/event.dto'
+import { mapEventFromApi, mapEventsFromApi } from '@/features/events/mappers/event.mapper'
+import type { EventApiDto, EventApiUpsertDto } from '@/features/events/api/event.dto'
 import { apiFetch } from '@/services/api'
 import type { Event } from '@/types/event'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 const EVENTS_ENDPOINT = `${API_BASE_URL}/events`
 
+export class EventApiError extends Error {
+  public readonly status: number
+
+  constructor(
+    status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'EventApiError'
+    this.status = status
+  }
+}
+
 export interface EventUpsertInput {
   title: string
   description: string
-  categoryName: string
-  statusValue: string
+  categoryId: string
+  statusId: string
   dateStart: string
   dateEnd?: string
   virtual: boolean
@@ -21,43 +34,79 @@ export interface EventUpsertInput {
   capacity?: number
 }
 
-function buildDomainEvent(input: EventUpsertInput): Event {
-  const now = new Date().toISOString()
+function mapInputToApiUpsertDto(input: EventUpsertInput): EventApiUpsertDto {
   return {
-    id: '',
     title: input.title,
     description: input.description,
-    pubDate: now,
     dateStart: input.dateStart,
     dateEnd: input.dateEnd,
     virtual: input.virtual,
     link: input.link,
-    videoUrl: input.videoUrl,
-    imageUrl: input.imageUrl,
+    image: input.imageUrl,
+    video: input.videoUrl,
     location: input.location,
     capacity: input.capacity,
-    category: input.categoryName
-      ? {
-          id: input.categoryName,
-          name: input.categoryName,
-        }
-      : null,
-    status: input.statusValue
-      ? {
-          id: input.statusValue,
-          status: input.statusValue,
-        }
-      : null,
-    manager: null,
+    id_category: input.categoryId,
+    id_status: input.statusId,
   }
 }
 
+async function safeReadResponseBody(response: Response): Promise<unknown> {
+  try {
+    const text = await response.text()
+    if (!text) {
+      return null
+    }
+
+    return JSON.parse(text) as unknown
+  } catch {
+    return null
+  }
+}
+
+function pickErrorMessage(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const rows = payload as { message?: unknown; error?: unknown; detail?: unknown }
+
+  if (typeof rows.message === 'string' && rows.message.trim()) {
+    return rows.message
+  }
+
+  if (Array.isArray(rows.message) && rows.message.length > 0) {
+    const first = rows.message[0]
+    if (typeof first === 'string' && first.trim()) {
+      return first
+    }
+  }
+
+  if (typeof rows.error === 'string' && rows.error.trim()) {
+    return rows.error
+  }
+
+  if (typeof rows.detail === 'string' && rows.detail.trim()) {
+    return rows.detail
+  }
+
+  return null
+}
+
+async function throwEventApiError(response: Response, fallbackMessage: string): Promise<never> {
+  const payload = await safeReadResponseBody(response)
+  const message = pickErrorMessage(payload) ?? fallbackMessage
+  throw new EventApiError(response.status, message)
+}
+
 async function parseEventsListResponse(response: Response): Promise<Event[]> {
-  const payload = (await response.json()) as EventApiDto[] | { data?: EventApiDto[]; items?: EventApiDto[] }
-  const rows = Array.isArray(payload) ? payload : payload.data ?? payload.items ?? []
-  
-  console.log('[DEBUG] Events API raw response:', { payload, rowsCount: rows.length })
-  
+  const payload = (await response.json()) as
+    | EventApiDto[]
+    | { data?: EventApiDto[]; items?: EventApiDto[]; events?: EventApiDto[]; results?: EventApiDto[] }
+  const rows = Array.isArray(payload)
+    ? payload
+    : payload.data ?? payload.items ?? payload.events ?? payload.results ?? []
+
   return mapEventsFromApi(rows)
 }
 
@@ -83,7 +132,7 @@ export async function listEvents(): Promise<Event[]> {
   })
 
   if (!response.ok) {
-    throw new Error('Failed to load events')
+    await throwEventApiError(response, 'Failed to load events')
   }
 
   return parseEventsListResponse(response)
@@ -100,14 +149,14 @@ export async function getEventById(eventId: string): Promise<Event | null> {
   }
 
   if (!response.ok) {
-    throw new Error('Failed to load event')
+    await throwEventApiError(response, 'Failed to load event')
   }
 
   return parseEventResponse(response)
 }
 
 export async function createEvent(input: EventUpsertInput): Promise<Event> {
-  const body = mapEventToApiUpsertDto(buildDomainEvent(input))
+  const body = mapInputToApiUpsertDto(input)
   const response = await apiFetch(EVENTS_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -117,7 +166,7 @@ export async function createEvent(input: EventUpsertInput): Promise<Event> {
   })
 
   if (!response.ok) {
-    throw new Error('Failed to create event')
+    await throwEventApiError(response, 'Failed to create event')
   }
 
   const createdEvent = await parseEventResponse(response)
@@ -130,7 +179,7 @@ export async function createEvent(input: EventUpsertInput): Promise<Event> {
 }
 
 export async function updateEvent(eventId: string, input: EventUpsertInput): Promise<Event | null> {
-  const body = mapEventToApiUpsertDto(buildDomainEvent(input))
+  const body = mapInputToApiUpsertDto(input)
   const response = await apiFetch(`${EVENTS_ENDPOINT}/${eventId}`, {
     method: 'PATCH',
     headers: {
@@ -144,7 +193,7 @@ export async function updateEvent(eventId: string, input: EventUpsertInput): Pro
   }
 
   if (!response.ok) {
-    throw new Error('Failed to update event')
+    await throwEventApiError(response, 'Failed to update event')
   }
 
   return parseEventResponse(response)
@@ -160,7 +209,7 @@ export async function deleteEvent(eventId: string): Promise<boolean> {
   }
 
   if (!response.ok) {
-    throw new Error('Failed to delete event')
+    await throwEventApiError(response, 'Failed to delete event')
   }
 
   return true

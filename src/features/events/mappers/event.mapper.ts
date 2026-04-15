@@ -1,5 +1,5 @@
 import type { Event } from '@/types/event'
-import type { EventApiDto, EventApiUpsertDto } from '@/features/events/api/event.dto'
+import type { EventApiDto } from '@/features/events/api/event.dto'
 
 function toStringValue(value: unknown): string | null {
   if (typeof value === 'string' && value.trim()) {
@@ -139,22 +139,4 @@ export function mapEventFromApi(dto: EventApiDto): Event {
 
 export function mapEventsFromApi(dtos: EventApiDto[]): Event[] {
   return dtos.map(mapEventFromApi)
-}
-
-export function mapEventToApiUpsertDto(event: Event): EventApiUpsertDto {
-  return {
-    title: event.title,
-    description: event.description,
-    pubDate: event.pubDate,
-    dateStart: event.dateStart,
-    dateEnd: event.dateEnd ?? null,
-    virtual: event.virtual,
-    link: event.link ?? null,
-    image: event.imageUrl ?? null,
-    video: event.videoUrl ?? null,
-    location: event.location ?? null,
-    capacity: event.capacity ?? null,
-    category: event.category?.name ?? null,
-    status: normalizeStatusValue(event.status?.status ?? null),
-  }
 }

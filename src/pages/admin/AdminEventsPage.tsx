@@ -1,8 +1,38 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { deleteEvent, listEvents } from '@/services/events.service'
+import { EventApiError, deleteEvent, listEvents } from '@/services/events.service'
 import type { Event } from '@/types/event'
+
+function getStatusLabel(event: Event): string {
+  if (event.deletedAt) {
+    return 'Cancelado'
+  }
+
+  const status = event.status?.status?.toUpperCase() ?? ''
+
+  if (!status) {
+    return 'Sin estado'
+  }
+
+  if (status === 'ACTIVO') {
+    return 'Activo'
+  }
+
+  if (status === 'PROGRAMADO') {
+    return 'Programado'
+  }
+
+  if (status === 'INACTIVO') {
+    return 'Inactivo'
+  }
+
+  if (status === 'CANCELADO') {
+    return 'Cancelado'
+  }
+
+  return status
+}
 
 export function AdminEventsPage() {
   const location = useLocation()
@@ -53,7 +83,7 @@ export function AdminEventsPage() {
   }, [])
 
   const handleDeleteEvent = async (eventItem: Event) => {
-    const confirmed = window.confirm(`Delete "${eventItem.title}"? This action cannot be undone.`)
+    const confirmed = window.confirm(`Cancel "${eventItem.title}"? This action marks the event as cancelled.`)
     if (!confirmed) {
       return
     }
@@ -70,9 +100,39 @@ export function AdminEventsPage() {
         return
       }
 
-      setEvents((current) => current.filter((item) => item.id !== eventItem.id))
-      setNotice(`Event "${eventItem.title}" deleted successfully.`)
-    } catch {
+      setEvents((current) =>
+        current.map((item) =>
+          item.id === eventItem.id
+            ? {
+                ...item,
+                deletedAt: new Date().toISOString(),
+                status: item.status
+                  ? {
+                      ...item.status,
+                      status: 'CANCELADO',
+                    }
+                  : {
+                      id: 'CANCELADO',
+                      status: 'CANCELADO',
+                    },
+              }
+            : item,
+        ),
+      )
+      setNotice(`Event "${eventItem.title}" cancelled successfully.`)
+    } catch (err) {
+      if (err instanceof EventApiError) {
+        if (err.status === 401) {
+          setError('Your session has expired. Please sign in again.')
+          return
+        }
+
+        if (err.status === 403) {
+          setError('Only ADMIN users can delete events.')
+          return
+        }
+      }
+
       setError('Unable to delete event right now. Please try again.')
     } finally {
       setDeletingId(null)
@@ -116,13 +176,14 @@ export function AdminEventsPage() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Category</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Mode</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
               {isLoading && (
                 <tr>
-                  <td className="px-4 py-6 text-sm text-gray-500" colSpan={5}>
+                  <td className="px-4 py-6 text-sm text-gray-500" colSpan={6}>
                     Loading events...
                   </td>
                 </tr>
@@ -130,7 +191,7 @@ export function AdminEventsPage() {
 
               {!isLoading && error && (
                 <tr>
-                  <td className="px-4 py-6 text-sm text-red-600" colSpan={5}>
+                  <td className="px-4 py-6 text-sm text-red-600" colSpan={6}>
                     Unable to load events at the moment.
                   </td>
                 </tr>
@@ -138,7 +199,7 @@ export function AdminEventsPage() {
 
               {!isLoading && !error && events.length === 0 && (
                 <tr>
-                  <td className="px-4 py-6 text-sm text-gray-500" colSpan={5}>
+                  <td className="px-4 py-6 text-sm text-gray-500" colSpan={6}>
                     No events available yet.
                   </td>
                 </tr>
@@ -154,6 +215,7 @@ export function AdminEventsPage() {
                       {new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(new Date(event.dateStart))}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{event.virtual ? 'Virtual' : 'On-site'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{getStatusLabel(event)}</td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-3">
                         <Link to={`/admin/events/${event.id}/edit`} className="font-medium text-green-700 hover:text-green-800">
@@ -161,11 +223,11 @@ export function AdminEventsPage() {
                         </Link>
                         <button
                           type="button"
-                          disabled={deletingId === event.id}
+                          disabled={deletingId === event.id || Boolean(event.deletedAt)}
                           onClick={() => void handleDeleteEvent(event)}
                           className="font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {deletingId === event.id ? 'Deleting...' : 'Delete'}
+                          {event.deletedAt ? 'Cancelled' : deletingId === event.id ? 'Cancelling...' : 'Cancel'}
                         </button>
                       </div>
                     </td>

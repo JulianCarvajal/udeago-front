@@ -34,15 +34,14 @@ export interface EventApiDto {
 export interface EventApiUpsertDto {
   title: string
   description: string
-  pubDate?: string
   dateStart: string
-  dateEnd?: string | null
+  dateEnd?: string
   virtual: boolean
-  link?: string | null
-  image?: string | null
-  video?: string | null
-  location?: string | null
-  capacity?: number | null
-  category?: string | null
-  status?: string | null
+  link?: string
+  image?: string
+  video?: string
+  location?: string
+  capacity?: number
+  id_category?: string
+  id_status?: string
 }

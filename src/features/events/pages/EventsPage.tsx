@@ -23,12 +23,9 @@ export function EventsPage({ title = 'Próximos eventos' }: EventsPageProps) {
         const rows = await listEvents()
         if (isMounted) {
           setEvents(rows)
-          console.log('[INFO] Events loaded:', rows.length)
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
-          const message = err instanceof Error ? err.message : String(err)
-          console.error('[ERROR] Failed to load events:', message)
           setError('Unable to load events right now.')
         }
       } finally {

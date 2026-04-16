@@ -64,16 +64,6 @@ export function PublicLayout() {
 
   }, [hasActiveAdminSession, location.pathname, location.search, navigate])
 
-  const handleExitPreview = () => {
-    navigate(
-      {
-        pathname: location.pathname,
-        search: '?preview=off',
-      },
-      { replace: true },
-    )
-  }
-
   return (
     <MobileAppFrame>
       <AppHeader />
@@ -82,20 +72,13 @@ export function PublicLayout() {
         <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2.5 md:px-6 md:py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs md:text-sm text-amber-900">
-              Modo vista previa admin: estas viendo la app como estudiante.
+              Vista publica desde sesion admin: asi ven los estudiantes la aplicacion.
             </p>
 
             <div className="flex items-center gap-3">
               <Link to="/admin" className="text-xs md:text-sm font-semibold text-green-700 hover:text-green-800">
                 Volver al panel
               </Link>
-              <button
-                type="button"
-                onClick={handleExitPreview}
-                className="text-xs md:text-sm font-medium text-amber-800 hover:text-amber-900"
-              >
-                Salir de preview
-              </button>
             </div>
           </div>
         </div>

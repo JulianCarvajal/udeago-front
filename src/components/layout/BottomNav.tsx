@@ -9,9 +9,9 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Home', Icon: Home },
-  { to: '/announcements', label: 'Announcements', Icon: Megaphone },
-  { to: '/recordings', label: 'Recordings', Icon: Clapperboard },
+  { to: '/', label: 'Inicio', Icon: Home },
+  { to: '/announcements', label: 'Avisos', Icon: Megaphone },
+  { to: '/recordings', label: 'Grabaciones', Icon: Clapperboard },
 ]
 
 export function BottomNav() {
@@ -47,7 +47,7 @@ export function BottomNav() {
         <Link
           to={adminTo}
           className="flex-1 flex flex-col items-center gap-0.5 py-2.5 md:py-3 text-gray-400 hover:text-gray-600 transition-colors group"
-          title={isAuthenticated ? 'Admin dashboard' : 'Admin access'}
+          title={isAuthenticated ? 'Panel de administracion' : 'Acceso de administracion'}
         >
           <LogIn size={22} strokeWidth={1.5} className="group-hover:text-green-700" />
           <span className="text-xs md:text-sm font-normal text-[10px] md:text-xs">{adminLabel}</span>

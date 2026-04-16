@@ -6,7 +6,7 @@ export function AppHeader() {
       <Link
         to="/"
         className="text-lg md:text-xl font-bold text-green-700 tracking-tight transition-colors hover:text-green-800"
-        aria-label="Go to home"
+        aria-label="Ir al inicio"
       >
         UdeAGo
       </Link>

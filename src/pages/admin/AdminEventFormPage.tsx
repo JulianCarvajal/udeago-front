@@ -82,31 +82,31 @@ function validateForm(form: FormState): FormErrors {
   const errors: FormErrors = {}
 
   if (!form.title.trim()) {
-    errors.title = 'Title is required.'
+    errors.title = 'El titulo es obligatorio.'
   }
 
   if (!form.categoryId.trim()) {
-    errors.categoryId = 'Category is required.'
+    errors.categoryId = 'La categoria es obligatoria.'
   }
 
   if (!form.statusId.trim()) {
-    errors.statusId = 'Status is required.'
+    errors.statusId = 'El estado es obligatorio.'
   }
 
   if (!form.dateStart) {
-    errors.dateStart = 'Start date is required.'
+    errors.dateStart = 'La fecha de inicio es obligatoria.'
   }
 
   if (form.dateEnd && form.dateStart && new Date(form.dateEnd) < new Date(form.dateStart)) {
-    errors.dateEnd = 'End date must be equal or later than start date.'
+    errors.dateEnd = 'La fecha de fin debe ser igual o posterior a la de inicio.'
   }
 
   if (!form.description.trim()) {
-    errors.description = 'Description is required.'
+    errors.description = 'La descripcion es obligatoria.'
   }
 
   if (form.virtual && !form.link.trim()) {
-    errors.link = 'Virtual events should include an access link.'
+    errors.link = 'Los eventos virtuales deben incluir un enlace de acceso.'
   }
 
   return errors
@@ -217,7 +217,7 @@ export function AdminEventFormPage() {
         setForm(mapFormFromEvent(event))
       } catch {
         if (isMounted) {
-          setSubmitError('Unable to load the selected event.')
+          setSubmitError('No fue posible cargar el evento seleccionado.')
         }
       } finally {
         if (isMounted) {
@@ -266,13 +266,13 @@ export function AdminEventFormPage() {
         const updated = await updateEvent(parsedEventId, payload)
 
         if (!updated) {
-          setSubmitError('The event no longer exists. Refresh and try again.')
+          setSubmitError('El evento ya no existe. Actualiza e intenta de nuevo.')
           return
         }
 
         navigate('/admin/events', {
           replace: true,
-          state: { notice: `Event "${updated.title}" updated successfully.` },
+          state: { notice: `El evento "${updated.title}" se actualizo correctamente.` },
         })
         return
       }
@@ -281,25 +281,25 @@ export function AdminEventFormPage() {
 
       navigate('/admin/events', {
         replace: true,
-        state: { notice: `Event "${created.title}" created successfully.` },
+        state: { notice: `El evento "${created.title}" se creo correctamente.` },
       })
     } catch (err) {
       if (err instanceof EventApiError) {
         if (err.status === 401) {
-          setSubmitError('Your session has expired. Please sign in again.')
+          setSubmitError('Tu sesion expiro. Inicia sesion nuevamente.')
           return
         }
 
         if (err.status === 403) {
-          setSubmitError('Only ADMIN users can create or edit events.')
+          setSubmitError('Solo usuarios ADMIN pueden crear o editar eventos.')
           return
         }
 
-        setSubmitError(err.message || 'Unable to save event right now. Please try again.')
+        setSubmitError(err.message || 'No fue posible guardar el evento en este momento. Intenta de nuevo.')
         return
       }
 
-      setSubmitError('Unable to save event right now. Please try again.')
+      setSubmitError('No fue posible guardar el evento en este momento. Intenta de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
@@ -309,7 +309,7 @@ export function AdminEventFormPage() {
     return (
       <section className="max-w-5xl mx-auto">
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <p className="text-sm text-gray-600">Loading event data...</p>
+          <p className="text-sm text-gray-600">Cargando datos del evento...</p>
         </div>
       </section>
     )
@@ -319,10 +319,10 @@ export function AdminEventFormPage() {
     return (
       <section className="max-w-5xl mx-auto">
         <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6 shadow-sm">
-          <h1 className="text-base md:text-lg font-semibold text-amber-900">Event not found</h1>
-          <p className="mt-1 text-sm text-amber-800">The event you are trying to edit does not exist.</p>
+          <h1 className="text-base md:text-lg font-semibold text-amber-900">Evento no encontrado</h1>
+          <p className="mt-1 text-sm text-amber-800">El evento que intentas editar no existe.</p>
           <Link to="/admin/events" className="mt-4 inline-flex text-sm font-medium text-green-700 hover:text-green-800">
-            Back to events table
+            Volver a la tabla de eventos
           </Link>
         </div>
       </section>
@@ -333,10 +333,10 @@ export function AdminEventFormPage() {
     <section className="max-w-5xl mx-auto">
       <div className="mb-5 md:mb-6">
         <h1 className="text-lg md:text-2xl font-bold text-gray-900">
-          {isEditMode ? 'Edit event' : 'Create event'}
+          {isEditMode ? 'Editar evento' : 'Crear evento'}
         </h1>
         <p className="text-xs md:text-sm text-gray-500 mt-1">
-          Complete all required fields and save changes to keep the event catalog up to date.
+          Completa los campos obligatorios y guarda los cambios para mantener actualizado el catalogo de eventos.
         </p>
       </div>
 
@@ -350,7 +350,7 @@ export function AdminEventFormPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <label htmlFor="title" className="text-xs md:text-sm font-medium text-gray-700">
-              Title *
+              Titulo *
             </label>
             <input
               id="title"
@@ -358,14 +358,14 @@ export function AdminEventFormPage() {
               value={form.title}
               onChange={(e) => handleFieldChange('title', e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-              placeholder="Event title"
+              placeholder="Titulo del evento"
             />
             {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
           </div>
 
           <div className="space-y-2">
             <label htmlFor="categoryId" className="text-xs md:text-sm font-medium text-gray-700">
-              Category *
+              Categoria *
             </label>
             <select
               id="categoryId"
@@ -373,7 +373,7 @@ export function AdminEventFormPage() {
               onChange={(e) => handleFieldChange('categoryId', e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
             >
-              <option value="">Select category</option>
+              <option value="">Selecciona una categoria</option>
               {categoryOptions.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -385,7 +385,7 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2">
             <label htmlFor="status" className="text-xs md:text-sm font-medium text-gray-700">
-              Status *
+              Estado *
             </label>
             <select
               id="status"
@@ -393,7 +393,7 @@ export function AdminEventFormPage() {
               onChange={(e) => handleFieldChange('statusId', e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
             >
-              <option value="">Select status</option>
+              <option value="">Selecciona un estado</option>
               {statusOptions.map((status) => (
                 <option key={status.id} value={status.id}>
                   {status.status}
@@ -405,7 +405,7 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2">
             <label htmlFor="location" className="text-xs md:text-sm font-medium text-gray-700">
-              Location (optional)
+              Ubicacion (opcional)
             </label>
             <input
               id="location"
@@ -419,7 +419,7 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2">
             <label htmlFor="capacity" className="text-xs md:text-sm font-medium text-gray-700">
-              Capacity (optional)
+              Cupos (opcional)
             </label>
             <input
               id="capacity"
@@ -434,7 +434,7 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2">
             <label htmlFor="dateStart" className="text-xs md:text-sm font-medium text-gray-700">
-              Start date *
+              Fecha de inicio *
             </label>
             <input
               id="dateStart"
@@ -448,7 +448,7 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2">
             <label htmlFor="dateEnd" className="text-xs md:text-sm font-medium text-gray-700">
-              End date
+              Fecha de fin
             </label>
             <input
               id="dateEnd"
@@ -462,7 +462,7 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2">
             <label htmlFor="virtual" className="text-xs md:text-sm font-medium text-gray-700">
-              Event mode
+              Modalidad del evento
             </label>
             <select
               id="virtual"
@@ -470,14 +470,14 @@ export function AdminEventFormPage() {
               onChange={(e) => handleFieldChange('virtual', e.target.value === 'virtual')}
               className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
             >
-              <option value="on-site">On-site</option>
+              <option value="on-site">Presencial</option>
               <option value="virtual">Virtual</option>
             </select>
           </div>
 
           <div className="space-y-2">
             <label htmlFor="link" className="text-xs md:text-sm font-medium text-gray-700">
-              Access link {form.virtual ? '*' : '(optional)'}
+              Enlace de acceso {form.virtual ? '*' : '(opcional)'}
             </label>
             <input
               id="link"
@@ -492,21 +492,21 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2 md:col-span-2">
             <label htmlFor="description" className="text-xs md:text-sm font-medium text-gray-700">
-              Description *
+              Descripcion *
             </label>
             <textarea
               id="description"
               value={form.description}
               onChange={(e) => handleFieldChange('description', e.target.value)}
               className="min-h-28 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-              placeholder="Describe the event goals, audience and logistics"
+              placeholder="Describe el objetivo, publico y logistica del evento"
             />
             {errors.description && <p className="text-xs text-red-600">{errors.description}</p>}
           </div>
 
           <div className="space-y-2">
             <label htmlFor="imageUrl" className="text-xs md:text-sm font-medium text-gray-700">
-              Image URL (optional)
+              URL de imagen (opcional)
             </label>
             <input
               id="imageUrl"
@@ -520,7 +520,7 @@ export function AdminEventFormPage() {
 
           <div className="space-y-2">
             <label htmlFor="videoUrl" className="text-xs md:text-sm font-medium text-gray-700">
-              Video URL (optional)
+              URL de video (opcional)
             </label>
             <input
               id="videoUrl"
@@ -539,14 +539,14 @@ export function AdminEventFormPage() {
             disabled={isSubmitting}
             className="rounded-xl bg-green-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? 'Saving...' : isEditMode ? 'Update event' : 'Create event'}
+            {isSubmitting ? 'Guardando...' : isEditMode ? 'Actualizar evento' : 'Crear evento'}
           </button>
 
           <Link
             to="/admin/events"
             className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900"
           >
-            Cancel
+            Cancelar
           </Link>
         </div>
       </form>

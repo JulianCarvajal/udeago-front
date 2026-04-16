@@ -53,7 +53,7 @@ export function EventDetailPage() {
         }
       } catch {
         if (isMounted) {
-          setError('Unable to load event details right now.')
+          setError('No fue posible cargar el detalle del evento en este momento.')
         }
       } finally {
         if (isMounted) {
@@ -73,7 +73,7 @@ export function EventDetailPage() {
     return (
       <section className="px-4 py-5 md:px-6 md:py-6">
         <div className="max-w-3xl">
-          <p className="text-sm md:text-base font-semibold text-gray-700">Loading event...</p>
+          <p className="text-sm md:text-base font-semibold text-gray-700">Cargando evento...</p>
         </div>
       </section>
     )
@@ -85,7 +85,7 @@ export function EventDetailPage() {
         <div className="max-w-3xl">
           <p className="text-sm md:text-base font-semibold text-red-700">{error}</p>
           <Link to="/" className="text-sm font-medium text-green-700 mt-3 inline-flex">
-            Back to home
+            Volver al inicio
           </Link>
         </div>
       </section>
@@ -96,10 +96,10 @@ export function EventDetailPage() {
     return (
       <section className="px-4 py-5 md:px-6 md:py-6">
         <div className="max-w-3xl">
-          <p className="text-sm md:text-base font-semibold text-gray-700">Event not found</p>
-          <p className="text-xs md:text-sm text-gray-500 mt-1 mb-4">The event you are looking for does not exist in mock data.</p>
+          <p className="text-sm md:text-base font-semibold text-gray-700">Evento no encontrado</p>
+          <p className="text-xs md:text-sm text-gray-500 mt-1 mb-4">El evento que buscas no existe o ya no esta disponible.</p>
           <Link to="/" className="text-sm font-medium text-green-700">
-            Back to home
+            Volver al inicio
           </Link>
         </div>
       </section>
@@ -109,7 +109,7 @@ export function EventDetailPage() {
   return (
     <article className="px-4 py-5 md:px-6 md:py-6">
       <Link to="/" className="inline-block text-xs md:text-sm font-medium text-green-700 mb-3 md:mb-4">
-        ← Back to events
+        ← Volver a eventos
       </Link>
 
       <div className="max-w-4xl rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-white lg:grid lg:grid-cols-5">
@@ -128,7 +128,7 @@ export function EventDetailPage() {
             <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
               {event.category?.name ?? 'General'}
             </span>
-            <span className="text-xs md:text-sm text-gray-400">{event.virtual ? 'Virtual' : 'On-site'}</span>
+            <span className="text-xs md:text-sm text-gray-400">{event.virtual ? 'Virtual' : 'Presencial'}</span>
           </div>
 
           <h1 className="text-base md:text-xl font-bold text-gray-900 leading-snug mb-2">{event.title}</h1>
@@ -136,12 +136,12 @@ export function EventDetailPage() {
 
           <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 md:p-4 space-y-2">
             <p className="text-xs md:text-sm text-gray-700">
-              <span className="font-semibold">Date: </span>
+              <span className="font-semibold">Fecha: </span>
               {formatDateRange(event.dateStart, event.dateEnd)}
             </p>
             {event.link && (
               <p className="text-xs md:text-sm text-gray-700 break-all">
-                <span className="font-semibold">Access link: </span>
+                <span className="font-semibold">Enlace de acceso: </span>
                 <a href={event.link} className="text-green-700 font-medium" target="_blank" rel="noreferrer">
                   {event.link}
                 </a>

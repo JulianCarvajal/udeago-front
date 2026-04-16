@@ -132,7 +132,7 @@ export async function listEvents(): Promise<Event[]> {
   })
 
   if (!response.ok) {
-    await throwEventApiError(response, 'Failed to load events')
+    await throwEventApiError(response, 'No fue posible cargar los eventos')
   }
 
   return parseEventsListResponse(response)
@@ -149,7 +149,7 @@ export async function getEventById(eventId: string): Promise<Event | null> {
   }
 
   if (!response.ok) {
-    await throwEventApiError(response, 'Failed to load event')
+    await throwEventApiError(response, 'No fue posible cargar el evento')
   }
 
   return parseEventResponse(response)
@@ -166,13 +166,13 @@ export async function createEvent(input: EventUpsertInput): Promise<Event> {
   })
 
   if (!response.ok) {
-    await throwEventApiError(response, 'Failed to create event')
+    await throwEventApiError(response, 'No fue posible crear el evento')
   }
 
   const createdEvent = await parseEventResponse(response)
 
   if (!createdEvent) {
-    throw new Error('Invalid create event response')
+    throw new Error('Respuesta invalida al crear el evento')
   }
 
   return createdEvent
@@ -193,7 +193,7 @@ export async function updateEvent(eventId: string, input: EventUpsertInput): Pro
   }
 
   if (!response.ok) {
-    await throwEventApiError(response, 'Failed to update event')
+    await throwEventApiError(response, 'No fue posible actualizar el evento')
   }
 
   return parseEventResponse(response)
@@ -209,7 +209,7 @@ export async function deleteEvent(eventId: string): Promise<boolean> {
   }
 
   if (!response.ok) {
-    await throwEventApiError(response, 'Failed to delete event')
+    await throwEventApiError(response, 'No fue posible cancelar el evento')
   }
 
   return true

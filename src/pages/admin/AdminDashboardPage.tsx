@@ -26,8 +26,8 @@ export function AdminDashboardPage() {
   return (
     <section className="max-w-5xl mx-auto">
       <div className="mb-5 md:mb-6">
-        <h1 className="text-lg md:text-2xl font-bold text-gray-900">Admin dashboard</h1>
-        <p className="text-xs md:text-sm text-gray-500 mt-1">Manage the public content and future CRUD flows from here.</p>
+        <h1 className="text-lg md:text-2xl font-bold text-gray-900">Panel de administracion</h1>
+        <p className="text-xs md:text-sm text-gray-500 mt-1">Gestiona el contenido publico y los flujos administrativos desde este espacio.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

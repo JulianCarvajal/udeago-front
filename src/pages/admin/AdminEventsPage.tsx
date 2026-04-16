@@ -66,7 +66,7 @@ export function AdminEventsPage() {
         }
       } catch {
         if (isMounted) {
-          setError('Unable to load events at the moment.')
+          setError('No fue posible cargar los eventos en este momento.')
         }
       } finally {
         if (isMounted) {
@@ -83,7 +83,7 @@ export function AdminEventsPage() {
   }, [])
 
   const handleDeleteEvent = async (eventItem: Event) => {
-    const confirmed = window.confirm(`Cancel "${eventItem.title}"? This action marks the event as cancelled.`)
+    const confirmed = window.confirm(`Deseas cancelar "${eventItem.title}"? Esta accion marcara el evento como cancelado.`)
     if (!confirmed) {
       return
     }
@@ -96,7 +96,7 @@ export function AdminEventsPage() {
       const deleted = await deleteEvent(eventItem.id)
 
       if (!deleted) {
-        setError('The selected event no longer exists.')
+        setError('El evento seleccionado ya no existe.')
         return
       }
 
@@ -119,21 +119,21 @@ export function AdminEventsPage() {
             : item,
         ),
       )
-      setNotice(`Event "${eventItem.title}" cancelled successfully.`)
+      setNotice(`El evento "${eventItem.title}" fue cancelado correctamente.`)
     } catch (err) {
       if (err instanceof EventApiError) {
         if (err.status === 401) {
-          setError('Your session has expired. Please sign in again.')
+          setError('Tu sesion expiro. Inicia sesion nuevamente.')
           return
         }
 
         if (err.status === 403) {
-          setError('Only ADMIN users can delete events.')
+          setError('Solo usuarios ADMIN pueden cancelar eventos.')
           return
         }
       }
 
-      setError('Unable to delete event right now. Please try again.')
+      setError('No fue posible cancelar el evento en este momento. Intenta de nuevo.')
     } finally {
       setDeletingId(null)
     }
@@ -143,15 +143,15 @@ export function AdminEventsPage() {
     <section className="max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4 mb-5 md:mb-6">
         <div>
-          <h1 className="text-lg md:text-2xl font-bold text-gray-900">Events management</h1>
-          <p className="text-xs md:text-sm text-gray-500 mt-1">Review, edit and publish events from a table-oriented view.</p>
+          <h1 className="text-lg md:text-2xl font-bold text-gray-900">Gestion de eventos</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">Consulta, edita y publica eventos desde una vista de tabla.</p>
         </div>
 
         <Link
           to="/admin/events/new"
           className="shrink-0 rounded-xl bg-green-700 px-3 py-2 text-xs md:text-sm font-semibold text-white hover:bg-green-800 transition-colors"
         >
-          New event
+          Nuevo evento
         </Link>
       </div>
 
@@ -172,19 +172,19 @@ export function AdminEventsPage() {
           <table className="min-w-full divide-y divide-gray-100 text-left">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Title</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Category</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Mode</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Titulo</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Categoria</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Fecha</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Modalidad</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Estado</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
               {isLoading && (
                 <tr>
                   <td className="px-4 py-6 text-sm text-gray-500" colSpan={6}>
-                    Loading events...
+                    Cargando eventos...
                   </td>
                 </tr>
               )}
@@ -192,7 +192,7 @@ export function AdminEventsPage() {
               {!isLoading && error && (
                 <tr>
                   <td className="px-4 py-6 text-sm text-red-600" colSpan={6}>
-                    Unable to load events at the moment.
+                    No fue posible cargar los eventos en este momento.
                   </td>
                 </tr>
               )}
@@ -200,7 +200,7 @@ export function AdminEventsPage() {
               {!isLoading && !error && events.length === 0 && (
                 <tr>
                   <td className="px-4 py-6 text-sm text-gray-500" colSpan={6}>
-                    No events available yet.
+                    Aun no hay eventos disponibles.
                   </td>
                 </tr>
               )}
@@ -214,12 +214,12 @@ export function AdminEventsPage() {
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(new Date(event.dateStart))}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{event.virtual ? 'Virtual' : 'On-site'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{event.virtual ? 'Virtual' : 'Presencial'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{getStatusLabel(event)}</td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-3">
                         <Link to={`/admin/events/${event.id}/edit`} className="font-medium text-green-700 hover:text-green-800">
-                          Edit
+                          Editar
                         </Link>
                         <button
                           type="button"
@@ -227,7 +227,7 @@ export function AdminEventsPage() {
                           onClick={() => void handleDeleteEvent(event)}
                           className="font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {event.deletedAt ? 'Cancelled' : deletingId === event.id ? 'Cancelling...' : 'Cancel'}
+                          {event.deletedAt ? 'Cancelado' : deletingId === event.id ? 'Cancelando...' : 'Cancelar'}
                         </button>
                       </div>
                     </td>

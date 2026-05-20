@@ -7,7 +7,9 @@ import { disableAdminPreviewMode } from '@/utils/adminPreview'
 const ADMIN_NAV_ITEMS = [
   { to: '/admin', label: 'Panel', end: true },
   { to: '/admin/events', label: 'Eventos' },
+  { to: '/admin/announcements', label: 'Anuncios' },
   { to: '/admin/events/new', label: 'Nuevo evento' },
+  { to: '/admin/announcements/new', label: 'Nuevo anuncio' },
   { to: '/admin/access', label: 'Acceso' },
 ]
 
@@ -20,12 +22,24 @@ function getCurrentPageLabel(pathname: string): string {
     return 'Gestión de eventos'
   }
 
+  if (pathname === '/admin/announcements') {
+    return 'Gestión de anuncios'
+  }
+
   if (pathname === '/admin/events/new') {
     return 'Crear evento'
   }
 
+  if (pathname === '/admin/announcements/new') {
+    return 'Crear anuncio'
+  }
+
   if (pathname.includes('/admin/events/') && pathname.endsWith('/edit')) {
     return 'Editar evento'
+  }
+
+  if (pathname.includes('/admin/announcements/') && pathname.endsWith('/edit')) {
+    return 'Editar anuncio'
   }
 
   if (pathname === '/admin/access') {

@@ -1,4 +1,4 @@
-import { Home, Megaphone, Clapperboard, LogIn, type LucideIcon } from 'lucide-react'
+import { Home, Clapperboard, LogIn, type LucideIcon } from 'lucide-react'
 import { NavLink, Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -10,7 +10,6 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Inicio', Icon: Home },
-  { to: '/announcements', label: 'Avisos', Icon: Megaphone },
   { to: '/recordings', label: 'Grabaciones', Icon: Clapperboard },
 ]
 

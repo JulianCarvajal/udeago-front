@@ -1,0 +1,309 @@
+===============================================================================
+                UDEAGO BACKEND - GUIA API DE ANUNCIOS (FRONTEND)
+===============================================================================
+Fecha: 2026-04-15
+Ambiente: Desarrollo
+Base URL API: http://localhost:3000
+Swagger: http://localhost:3000/api
+
+
+1) OBJETIVO
+-------------------------------------------------------------------------------
+Este documento describe, de forma precisa, como consumir el modulo de anuncios
+(announcements) desde frontend.
+Incluye:
+- Modelo de datos y relaciones
+- DTOs y validaciones
+- CRUD disponible
+- Requisitos de autenticacion/autorizacion
+- Restricciones y consideraciones tecnicas
+
+
+2) RESUMEN FUNCIONAL DEL MODULO
+-------------------------------------------------------------------------------
+El modulo de anuncios SI tiene CRUD implementado:
+- Crear anuncio (ADMIN, autenticado)
+- Listar anuncios (publico)
+- Ver anuncio por ID (publico)
+- Actualizar anuncio (ADMIN, autenticado)
+- Eliminar anuncio (ADMIN, autenticado, soft delete)
+
+Controlador:
+- Ruta base: /announcements
+
+Servicio:
+- Persistencia con TypeORM
+- Carga relaciones con status y user
+- Eliminacion logica (soft delete)
+
+
+3) MODELO DE DATOS (ENTIDAD Announcement)
+-------------------------------------------------------------------------------
+Tabla: announcements
+
+Campos:
+- id: UUID (PK, heredado de BaseEntity)
+- createdAt: timestamptz (autogenerado)
+- updatedAt: timestamptz (autogenerado)
+- deletedAt: timestamptz nullable (soft delete)
+- title: varchar(255), requerido
+- description: text, requerido
+- date: timestamptz, default CURRENT_TIMESTAMP
+- user: ManyToOne -> users (columna id_user)
+- status: ManyToOne -> status (columna id_status)
+
+Relaciones importantes:
+- Un anuncio pertenece a un usuario creador (user)
+- Un anuncio tiene un estado (status)
+
+
+4) DEPENDENCIAS DE DATOS MAESTROS
+-------------------------------------------------------------------------------
+Para crear/actualizar anuncios, frontend necesita un id_status valido.
+
+Endpoint para obtener estados:
+- GET /master-data/status
+
+Estados existentes en seed (minimo esperado):
+- ACTIVO
+- INACTIVO
+- PROGRAMADO
+- CANCELADO
+- ELIMINADO
+
+Recomendacion frontend:
+- Cargar estados al iniciar pantallas de formulario
+- Usar select por nombre visible y enviar el UUID seleccionado
+
+
+5) AUTENTICACION Y AUTORIZACION
+-------------------------------------------------------------------------------
+Autenticacion:
+- JWT Bearer Token
+- Header: Authorization: Bearer <access_token>
+
+Autorizacion por rol:
+- Crear/editar/eliminar anuncios requiere rol ADMIN
+- Listar y consultar detalle es publico
+
+Rutas protegidas (ADMIN):
+- POST /announcements
+- PATCH /announcements/:id
+- DELETE /announcements/:id
+
+Rutas publicas:
+- GET /announcements
+- GET /announcements/:id
+
+
+6) DTOs (REQUEST CONTRACT)
+-------------------------------------------------------------------------------
+
+6.1) CreateAnnouncementDto
+Campos:
+- title: string, requerido
+- description: string, requerido
+- id_status: UUID string, requerido
+
+Validaciones:
+- title: IsString + IsNotEmpty
+- description: IsString + IsNotEmpty
+- id_status: IsUUID + IsNotEmpty
+
+Ejemplo payload:
+{
+  "title": "Mantenimiento programado",
+  "description": "La plataforma estara en mantenimiento de 10:00 p.m. a 11:30 p.m.",
+  "id_status": "d8c92de3-3e73-4330-b3d0-7f63dc2ffe90"
+}
+
+
+6.2) UpdateAnnouncementDto
+- Extiende PartialType(CreateAnnouncementDto)
+- Todos los campos son opcionales
+
+Campos posibles:
+- title?: string
+- description?: string
+- id_status?: UUID string
+
+Ejemplo payload parcial:
+{
+  "description": "Cambio de horario del mantenimiento.",
+  "id_status": "b2c95762-c120-46d9-9d9e-ab5d05aca507"
+}
+
+
+7) CRUD DE ANUNCIOS (ENDPOINTS)
+-------------------------------------------------------------------------------
+
+7.1) Crear anuncio
+Metodo: POST
+Ruta: /announcements
+Auth: SI (JWT + ADMIN)
+
+Headers:
+- Authorization: Bearer <token>
+- Content-Type: application/json
+
+Body:
+- CreateAnnouncementDto
+
+Respuesta esperada:
+- 201 Created con objeto anuncio creado
+
+Notas:
+- user se toma del usuario autenticado
+- status se asigna con id_status
+
+
+7.2) Listar anuncios
+Metodo: GET
+Ruta: /announcements
+Auth: NO (publico)
+
+Comportamiento:
+- Devuelve relaciones status y user
+- Ordenado por date DESC (mas recientes primero)
+- No incluye eliminados logicamente (soft deleted)
+
+Respuesta esperada:
+- 200 OK + array de anuncios
+
+Ejemplo shape de respuesta:
+[
+  {
+    "id": "uuid",
+    "title": "...",
+    "description": "...",
+    "date": "2026-04-15T...",
+    "createdAt": "...",
+    "updatedAt": "...",
+    "deletedAt": null,
+    "status": {
+      "id": "uuid",
+      "status": "ACTIVO"
+    },
+    "user": {
+      "id": "uuid",
+      "email": "...",
+      "name": "..."
+    }
+  }
+]
+
+
+7.3) Obtener anuncio por ID
+Metodo: GET
+Ruta: /announcements/:id
+Auth: NO (publico)
+
+Respuesta esperada:
+- 200 OK con anuncio
+- 404 si no existe
+
+
+7.4) Actualizar anuncio
+Metodo: PATCH
+Ruta: /announcements/:id
+Auth: SI (JWT + ADMIN)
+
+Body:
+- UpdateAnnouncementDto (parcial)
+
+Respuesta esperada:
+- 200 OK con anuncio actualizado
+- 404 si no existe
+
+
+7.5) Eliminar anuncio (soft delete)
+Metodo: DELETE
+Ruta: /announcements/:id
+Auth: SI (JWT + ADMIN)
+
+Comportamiento interno:
+- Busca status "ELIMINADO"
+- Actualiza el anuncio con ese status
+- Ejecuta softRemove (setea deletedAt)
+
+Efecto funcional:
+- El anuncio deja de salir en listado normal (findAll)
+- El registro permanece en BD (auditoria/historico)
+
+Respuesta esperada:
+- 200 OK con objeto eliminado logicamente
+- 404 si no existe
+
+
+8) RESTRICCIONES Y CONSIDERACIONES IMPORTANTES PARA FRONTEND
+-------------------------------------------------------------------------------
+1. id_status es obligatorio en create y debe existir en BD.
+2. Antes de mostrar formulario de crear/editar anuncio, consultar:
+   - GET /master-data/status
+3. Si el usuario no es ADMIN, ocultar botones de crear/editar/eliminar.
+4. En delete no se elimina fisicamente: se hace soft delete.
+5. El listado devuelve anuncios mas recientes primero (date DESC).
+6. findAll y findOne incluyen relaciones (status y user), util para UI.
+7. Si se intenta usar status inexistente, el backend puede fallar por FK o
+   validacion de entidad relacionada.
+8. El backend usa ValidationPipe global; payloads invalidos deben responder 400.
+9. CORS esta habilitado para http://localhost:5173.
+
+
+9) ERRORES ESPERADOS EN FRONT
+-------------------------------------------------------------------------------
+- 400 Bad Request
+  Causa: payload invalido (tipos, uuid, campos requeridos vacios)
+
+- 401 Unauthorized
+  Causa: token ausente/invalido/expirado en rutas protegidas
+
+- 403 Forbidden
+  Causa: usuario autenticado sin rol ADMIN
+
+- 404 Not Found
+  Causa: anuncio no encontrado por id
+
+- 500 Internal Server Error
+  Causa: error interno (por ejemplo, inconsistencias de datos)
+
+
+10) FLUJO RECOMENDADO DE IMPLEMENTACION EN FRONT
+-------------------------------------------------------------------------------
+A) Pantalla de listado de anuncios
+1. Llamar GET /announcements al montar la vista
+2. Renderizar card/listado con title, description, date, status
+3. Mostrar autor (user) cuando se requiera contexto administrativo
+
+B) Formulario de crear anuncio (ADMIN)
+1. Llamar GET /master-data/status
+2. Cargar select de estados (normalmente ACTIVO)
+3. Enviar POST /announcements con token
+4. Al crear con exito, redirigir a listado y recargar
+
+C) Formulario de editar anuncio (ADMIN)
+1. Llamar GET /announcements/:id
+2. Llamar GET /master-data/status para select
+3. Enviar PATCH /announcements/:id con token
+
+D) Eliminar anuncio (ADMIN)
+1. Confirmacion en UI
+2. Enviar DELETE /announcements/:id con token
+3. Recargar listado
+
+
+11) CHECKLIST RAPIDO PARA EL EQUIPO FRONT
+-------------------------------------------------------------------------------
+[ ] Consumir GET /announcements (publico)
+[ ] Consumir GET /announcements/:id (publico)
+[ ] Consumir GET /master-data/status para formularios
+[ ] Enviar Authorization Bearer en POST/PATCH/DELETE
+[ ] Control de permisos por rol ADMIN en UI
+[ ] Manejo de errores 400/401/403/404/500
+[ ] Refrescar listado tras create/update/delete
+[ ] No asumir hard delete (delete es logico)
+
+
+===============================================================================
+FIN DEL DOCUMENTO
+===============================================================================

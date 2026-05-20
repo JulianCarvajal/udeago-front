@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { CalendarPlus, ClipboardList, Users } from 'lucide-react'
+import { CalendarPlus, ClipboardList, Megaphone, Users } from 'lucide-react'
 
 const adminCards = [
   {
@@ -9,10 +9,22 @@ const adminCards = [
     icon: ClipboardList,
   },
   {
+    title: 'Anuncios',
+    description: 'Gestiona novedades, avisos y comunicados institucionales.',
+    href: '/admin/announcements',
+    icon: Megaphone,
+  },
+  {
     title: 'Nuevo evento',
     description: 'Acceso rápido al flujo de creación de eventos.',
     href: '/admin/events/new',
     icon: CalendarPlus,
+  },
+  {
+    title: 'Nuevo anuncio',
+    description: 'Crea un aviso o novedad para mostrar en el home.',
+    href: '/admin/announcements/new',
+    icon: Megaphone,
   },
   {
     title: 'Acceso',

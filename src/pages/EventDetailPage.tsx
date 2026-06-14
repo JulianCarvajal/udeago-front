@@ -2,28 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getEventById } from '@/services/events.service'
 import type { Event } from '@/types/event'
+import { formatEventDate, formatEventTime, isMultiDayEvent } from '@/features/events/utils/date-format'
 
-function formatDateRange(start: string, end?: string): string {
-  const formatter = new Intl.DateTimeFormat('es-CO', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'long',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-
-  const startDate = formatter.format(new Date(start))
-
-  if (!end) {
-    return startDate
-  }
-
-  const endFormatter = new Intl.DateTimeFormat('es-CO', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-
-  return `${startDate} - ${endFormatter.format(new Date(end))}`
+function EventDateCard({ label, date }: { label: string; date: string }) {
+  return (
+    <div className="rounded-xl bg-white px-4 py-3 border border-gray-100 shadow-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">{label}</p>
+      <p className="mt-1 text-sm md:text-base font-semibold text-gray-900">{formatEventDate(date)}</p>
+      <p className="mt-1 text-xs md:text-sm text-gray-500">{formatEventTime(date)}</p>
+    </div>
+  )
 }
 
 export function EventDetailPage() {
@@ -134,18 +122,29 @@ export function EventDetailPage() {
           <h1 className="text-base md:text-xl font-bold text-gray-900 leading-snug mb-2">{event.title}</h1>
           <p className="text-xs md:text-sm text-gray-500 mb-4 leading-relaxed">{event.description}</p>
 
-          <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 md:p-4 space-y-2">
-            <p className="text-xs md:text-sm text-gray-700">
-              <span className="font-semibold">Fecha: </span>
-              {formatDateRange(event.dateStart, event.dateEnd)}
-            </p>
+          <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 md:p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
+                📅
+              </div>
+              <div className="min-w-0 flex-1 space-y-3">
+                {event.dateEnd && isMultiDayEvent(event.dateStart, event.dateEnd) ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <EventDateCard label="Inicio" date={event.dateStart} />
+                    <EventDateCard label="Fin" date={event.dateEnd} />
+                  </div>
+                ) : (
+                  <EventDateCard label="Fecha del evento" date={event.dateStart} />
+                )}
+              </div>
+            </div>
             {event.link && (
-              <p className="text-xs md:text-sm text-gray-700 break-all">
-                <span className="font-semibold">Enlace de acceso: </span>
-                <a href={event.link} className="text-green-700 font-medium" target="_blank" rel="noreferrer">
+              <div className="pt-2 border-t border-gray-200">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Enlace de acceso</p>
+                <a href={event.link} className="mt-1 block text-xs md:text-sm text-green-700 font-medium break-all" target="_blank" rel="noreferrer">
                   {event.link}
                 </a>
-              </p>
+              </div>
             )}
           </div>
         </div>

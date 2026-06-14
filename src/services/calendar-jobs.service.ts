@@ -2,8 +2,8 @@ import { apiFetch } from '@/services/api'
 import { mapCalendarJobFromApi, mapCalendarJobUploadResultFromApi, mapCalendarJobsFromApi } from '@/features/calendar-jobs/mappers/calendar-job.mapper'
 import type { CalendarJobApiDto, CalendarJobUploadApiDto } from '@/features/calendar-jobs/api/calendar-job.dto'
 import type { CalendarJob, CalendarJobUploadResult } from '@/types/calendar-job'
+import { API_BASE_URL } from '@/config/env'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 const CALENDAR_JOBS_ENDPOINT = `${API_BASE_URL}/calendar-jobs`
 
 export class CalendarJobApiError extends Error {

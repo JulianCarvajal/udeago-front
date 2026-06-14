@@ -2,8 +2,8 @@ import { apiFetch } from '@/services/api'
 import type { Announcement } from '@/types/announcement'
 import { mapAnnouncementFromApi, mapAnnouncementsFromApi, mapAnnouncementToApiUpsertDto } from '@/features/announcements/mappers/announcement.mapper'
 import type { AnnouncementApiDto } from '@/features/announcements/api/announcement.dto'
+import { API_BASE_URL } from '@/config/env'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 const ANNOUNCEMENTS_ENDPOINT = `${API_BASE_URL}/announcements`
 
 export class AnnouncementApiError extends Error {

@@ -124,7 +124,13 @@ export function AdminCalendarJobsPage() {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [isPolling, setIsPolling] = useState(false)
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const pollingTimeoutRef = useRef<number | null>(null)
+  const selectedEventIdRef = useRef('')
+
+  useEffect(() => {
+    selectedEventIdRef.current = selectedEventId
+  }, [selectedEventId])
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) ?? null,
@@ -168,6 +174,7 @@ export function AdminCalendarJobsPage() {
   useEffect(() => {
     setSelectedFile(null)
     setSelectedJob(null)
+    setActiveJobId(null)
     setSubmitError(null)
     setSubmitNotice(null)
     setHistory([])
@@ -217,14 +224,66 @@ export function AdminCalendarJobsPage() {
     }
   }, [])
 
-  const stopPolling = () => {
-    if (pollingTimeoutRef.current !== null) {
-      window.clearTimeout(pollingTimeoutRef.current)
-      pollingTimeoutRef.current = null
+  useEffect(() => {
+    if (!activeJobId) {
+      setIsPolling(false)
+      return
     }
 
-    setIsPolling(false)
-  }
+    let isMounted = true
+
+    const pollJob = async () => {
+      try {
+        const row = await getCalendarJobById(activeJobId)
+
+        if (!isMounted) {
+          return
+        }
+
+        if (!row) {
+          setSubmitError('No fue posible encontrar el proceso en curso. Revisa el historial del evento.')
+          setActiveJobId(null)
+          setIsPolling(false)
+          return
+        }
+
+        setSelectedJob(row)
+
+        const progress = getProgressValue(row)
+        const isFinished = progress >= 100 || isFinalJobStatus(row.status)
+
+        if (isFinished) {
+          setActiveJobId(null)
+          setIsPolling(false)
+          await refreshHistory(row.eventId ?? selectedEventIdRef.current)
+          return
+        }
+
+        pollingTimeoutRef.current = window.setTimeout(() => {
+          void pollJob()
+        }, POLLING_INTERVAL_MS)
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setSubmitError('No fue posible actualizar el progreso del proceso. Puedes revisar el historial más tarde.')
+        setActiveJobId(null)
+        setIsPolling(false)
+      }
+    }
+
+    setIsPolling(true)
+    void pollJob()
+
+    return () => {
+      isMounted = false
+      if (pollingTimeoutRef.current !== null) {
+        window.clearTimeout(pollingTimeoutRef.current)
+        pollingTimeoutRef.current = null
+      }
+    }
+  }, [activeJobId])
 
   const refreshHistory = async (eventId = selectedEventId) => {
     if (!eventId) {
@@ -242,43 +301,6 @@ export function AdminCalendarJobsPage() {
     } finally {
       setHistoryLoading(false)
     }
-  }
-
-  const scheduleJobPolling = (jobId: string) => {
-    stopPolling()
-    setIsPolling(true)
-
-    const tick = async () => {
-      try {
-        const row = await getCalendarJobById(jobId)
-
-        if (!row) {
-          setSelectedJob(null)
-          stopPolling()
-          return
-        }
-
-        setSelectedJob(row)
-
-        const progress = getProgressValue(row)
-        if (progress >= 100 || isFinalJobStatus(row.status)) {
-          stopPolling()
-          await refreshHistory(row.eventId ?? selectedEventId)
-          return
-        }
-
-        pollingTimeoutRef.current = window.setTimeout(() => {
-          void tick()
-        }, POLLING_INTERVAL_MS)
-      } catch {
-        setSubmitError('No fue posible actualizar el progreso del proceso. Puedes revisar el historial más tarde.')
-        stopPolling()
-      }
-    }
-
-    pollingTimeoutRef.current = window.setTimeout(() => {
-      void tick()
-    }, POLLING_INTERVAL_MS)
   }
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -332,8 +354,8 @@ export function AdminCalendarJobsPage() {
         event: selectedEvent,
         user: null,
       })
-      await refreshHistory(selectedEventId)
-      scheduleJobPolling(result.calendarJobId)
+      setActiveJobId(result.calendarJobId)
+      void refreshHistory(selectedEventId)
     } catch (error) {
       if (error instanceof CalendarJobApiError) {
         if (error.status === 401) {
@@ -362,7 +384,7 @@ export function AdminCalendarJobsPage() {
   }
 
   const progressValue = getProgressValue(selectedJob)
-  const canStart = Boolean(selectedEventId && selectedFile && !isSubmitting && !isEventsLoading)
+  const canStart = Boolean(selectedEventId && selectedFile && !isSubmitting && !isEventsLoading && !activeJobId)
 
   return (
     <section className="max-w-5xl mx-auto space-y-6">
@@ -423,7 +445,13 @@ export function AdminCalendarJobsPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm">
+          <form
+            className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void handleStartUpload()
+            }}
+          >
             <div className="flex items-center gap-2 text-green-700 mb-3">
               <FileSpreadsheet size={18} />
               <span className="text-xs md:text-sm font-semibold uppercase tracking-[0.18em]">Paso 2</span>
@@ -445,8 +473,7 @@ export function AdminCalendarJobsPage() {
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
-                type="button"
-                onClick={() => void handleStartUpload()}
+                type="submit"
                 disabled={!canStart}
                 className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -466,7 +493,7 @@ export function AdminCalendarJobsPage() {
             <p className="mt-3 text-xs text-gray-500">
               El sistema procesará los correos en segundo plano y actualizará el evento en Google Calendar.
             </p>
-          </div>
+          </form>
         </div>
 
         <div className="space-y-4">

@@ -73,3 +73,13 @@ export default defineConfig([
 ```
 
 We are also using Tailwindcss and Path Aliases
+
+## Environment variables
+
+Create a local `.env.local` file if you need to override the API URL:
+
+```bash
+VITE_API_BASE_URL=https://udeago-back.onrender.com
+```
+
+The app uses `https://udeago-back.onrender.com` by default when the variable is not set.

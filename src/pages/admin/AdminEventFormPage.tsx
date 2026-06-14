@@ -28,7 +28,18 @@ interface FormState {
 
 type FormErrors = Partial<Record<keyof FormState, string>>
 
+interface DateDraftState {
+  startDate: string
+  startHour: string
+  startMinute: string
+  endDate: string
+  endHour: string
+  endMinute: string
+}
+
 const DEFAULT_STATUS_ID = ''
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'))
+const MINUTE_OPTIONS = ['00', '15', '30', '45']
 
 function emptyForm(): FormState {
   return {
@@ -47,6 +58,17 @@ function emptyForm(): FormState {
   }
 }
 
+function emptyDateDrafts(): DateDraftState {
+  return {
+    startDate: '',
+    startHour: '',
+    startMinute: '',
+    endDate: '',
+    endHour: '',
+    endMinute: '',
+  }
+}
+
 function toInputDateTime(value?: string): string {
   if (!value) {
     return ''
@@ -59,6 +81,27 @@ function toInputDateTime(value?: string): string {
 
   const timezoneOffset = date.getTimezoneOffset() * 60000
   return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16)
+}
+
+function splitDateTime(value?: string): { date: string; hour: string; minute: string } {
+  const dateTime = toInputDateTime(value)
+
+  if (!dateTime) {
+    return { date: '', hour: '', minute: '' }
+  }
+
+  const [date, time] = dateTime.split('T')
+  const [hour = '', minute = ''] = (time ?? '').split(':')
+
+  return { date: date ?? '', hour, minute }
+}
+
+function combineDateTime(date: string, hour: string, minute: string): string {
+  if (!date || !hour || !minute) {
+    return ''
+  }
+
+  return `${date}T${hour}:${minute}`
 }
 
 function mapFormFromEvent(event: Event): FormState {
@@ -78,7 +121,7 @@ function mapFormFromEvent(event: Event): FormState {
   }
 }
 
-function validateForm(form: FormState): FormErrors {
+function validateForm(form: FormState, drafts: DateDraftState): FormErrors {
   const errors: FormErrors = {}
 
   if (!form.title.trim()) {
@@ -93,8 +136,16 @@ function validateForm(form: FormState): FormErrors {
     errors.statusId = 'El estado es obligatorio.'
   }
 
-  if (!form.dateStart) {
-    errors.dateStart = 'La fecha de inicio es obligatoria.'
+  const startDateComplete = Boolean(drafts.startDate && drafts.startHour && drafts.startMinute)
+  const endDateComplete = Boolean(drafts.endDate && drafts.endHour && drafts.endMinute)
+  const endDateTouched = Boolean(drafts.endDate || drafts.endHour || drafts.endMinute)
+
+  if (!startDateComplete) {
+    errors.dateStart = 'Selecciona la fecha y la hora de inicio.'
+  }
+
+  if (endDateTouched && !endDateComplete) {
+    errors.dateEnd = 'Si defines el fin, completa fecha y hora.'
   }
 
   if (form.dateEnd && form.dateStart && new Date(form.dateEnd) < new Date(form.dateStart)) {
@@ -142,8 +193,37 @@ export function AdminEventFormPage() {
   const [isNotFound, setIsNotFound] = useState(false)
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([])
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>([])
+  const [dateDrafts, setDateDrafts] = useState<DateDraftState>(emptyDateDrafts)
 
   const parsedEventId = useMemo(() => eventId ?? '', [eventId])
+
+  const setDraftValue = (key: keyof DateDraftState, value: string) => {
+    setDateDrafts((current) => {
+      const next = { ...current, [key]: value }
+      const nextStart = combineDateTime(next.startDate, next.startHour, next.startMinute)
+      const nextEnd = combineDateTime(next.endDate, next.endHour, next.endMinute)
+
+      setForm((currentForm) => ({
+        ...currentForm,
+        dateStart: nextStart,
+        dateEnd: nextEnd,
+      }))
+
+      return next
+    })
+
+    setErrors((current) => {
+      const fieldKey = key.startsWith('start') ? 'dateStart' : 'dateEnd'
+
+      if (!current[fieldKey]) {
+        return current
+      }
+
+      const next = { ...current }
+      delete next[fieldKey]
+      return next
+    })
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -215,6 +295,17 @@ export function AdminEventFormPage() {
         }
 
         setForm(mapFormFromEvent(event))
+        const startParts = splitDateTime(event.dateStart)
+        const endParts = splitDateTime(event.dateEnd)
+
+        setDateDrafts({
+          startDate: startParts.date,
+          startHour: startParts.hour,
+          startMinute: startParts.minute,
+          endDate: endParts.date,
+          endHour: endParts.hour,
+          endMinute: endParts.minute,
+        })
       } catch {
         if (isMounted) {
           setSubmitError('No fue posible cargar el evento seleccionado.')
@@ -249,7 +340,13 @@ export function AdminEventFormPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const nextErrors = validateForm(form)
+    const submissionForm: FormState = {
+      ...form,
+      dateStart: combineDateTime(dateDrafts.startDate, dateDrafts.startHour, dateDrafts.startMinute),
+      dateEnd: combineDateTime(dateDrafts.endDate, dateDrafts.endHour, dateDrafts.endMinute),
+    }
+
+    const nextErrors = validateForm(submissionForm, dateDrafts)
     setErrors(nextErrors)
     setSubmitError(null)
 
@@ -260,7 +357,7 @@ export function AdminEventFormPage() {
     setIsSubmitting(true)
 
     try {
-      const payload = toPayload(form)
+      const payload = toPayload(submissionForm)
 
       if (isEditMode) {
         const updated = await updateEvent(parsedEventId, payload)
@@ -432,32 +529,154 @@ export function AdminEventFormPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="dateStart" className="text-xs md:text-sm font-medium text-gray-700">
-              Fecha de inicio *
-            </label>
-            <input
-              id="dateStart"
-              type="datetime-local"
-              value={form.dateStart}
-              onChange={(e) => handleFieldChange('dateStart', e.target.value)}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-            />
-            {errors.dateStart && <p className="text-xs text-red-600">{errors.dateStart}</p>}
-          </div>
+          <div className="md:col-span-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-4 md:p-5 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
+                📅
+              </div>
+              <div>
+                <h2 className="text-sm md:text-base font-semibold text-gray-900">Horario del evento</h2>
+                <p className="mt-1 text-xs md:text-sm text-gray-500">Elige primero la fecha y luego la hora exacta. Para eventos largos, completa también el fin.</p>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <label htmlFor="dateEnd" className="text-xs md:text-sm font-medium text-gray-700">
-              Fecha de fin
-            </label>
-            <input
-              id="dateEnd"
-              type="datetime-local"
-              value={form.dateEnd}
-              onChange={(e) => handleFieldChange('dateEnd', e.target.value)}
-              className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-            />
-            {errors.dateEnd && <p className="text-xs text-red-600">{errors.dateEnd}</p>}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <label htmlFor="dateStart-date" className="text-xs md:text-sm font-medium text-gray-700">
+                      Inicio del evento *
+                    </label>
+                    <p className="mt-1 text-xs text-gray-500">Define cuándo empieza el evento.</p>
+                  </div>
+                  <span className="rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-green-700">
+                    Obligatorio
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <input
+                    id="dateStart-date"
+                    type="date"
+                    value={dateDrafts.startDate}
+                    onChange={(e) => setDraftValue('startDate', e.target.value)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                  />
+
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                    <div className="space-y-1.5">
+                      <label htmlFor="dateStart-hour" className="text-xs font-medium text-gray-700">
+                        Hora
+                      </label>
+                      <select
+                        id="dateStart-hour"
+                        value={dateDrafts.startHour}
+                        onChange={(e) => setDraftValue('startHour', e.target.value)}
+                        className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      >
+                        <option value="">--</option>
+                        {HOUR_OPTIONS.map((hour) => (
+                          <option key={hour} value={hour}>
+                            {hour}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="pb-3 text-center text-lg font-semibold text-gray-400">:</div>
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="dateStart-minute" className="text-xs font-medium text-gray-700">
+                        Minutos
+                      </label>
+                      <select
+                        id="dateStart-minute"
+                        value={dateDrafts.startMinute}
+                        onChange={(e) => setDraftValue('startMinute', e.target.value)}
+                        className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      >
+                        <option value="">--</option>
+                        {MINUTE_OPTIONS.map((minute) => (
+                          <option key={minute} value={minute}>
+                            {minute}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {errors.dateStart && <p className="mt-3 text-xs text-red-600">{errors.dateStart}</p>}
+              </div>
+
+              <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <label htmlFor="dateEnd-date" className="text-xs md:text-sm font-medium text-gray-700">
+                      Fin del evento
+                    </label>
+                    <p className="mt-1 text-xs text-gray-500">Opcional. Úsalo para eventos de varios días.</p>
+                  </div>
+                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-600">
+                    Opcional
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <input
+                    id="dateEnd-date"
+                    type="date"
+                    value={dateDrafts.endDate}
+                    onChange={(e) => setDraftValue('endDate', e.target.value)}
+                    className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                  />
+
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                    <div className="space-y-1.5">
+                      <label htmlFor="dateEnd-hour" className="text-xs font-medium text-gray-700">
+                        Hora
+                      </label>
+                      <select
+                        id="dateEnd-hour"
+                        value={dateDrafts.endHour}
+                        onChange={(e) => setDraftValue('endHour', e.target.value)}
+                        className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      >
+                        <option value="">--</option>
+                        {HOUR_OPTIONS.map((hour) => (
+                          <option key={hour} value={hour}>
+                            {hour}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="pb-3 text-center text-lg font-semibold text-gray-400">:</div>
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="dateEnd-minute" className="text-xs font-medium text-gray-700">
+                        Minutos
+                      </label>
+                      <select
+                        id="dateEnd-minute"
+                        value={dateDrafts.endMinute}
+                        onChange={(e) => setDraftValue('endMinute', e.target.value)}
+                        className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      >
+                        <option value="">--</option>
+                        {MINUTE_OPTIONS.map((minute) => (
+                          <option key={minute} value={minute}>
+                            {minute}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {errors.dateEnd && <p className="mt-3 text-xs text-red-600">{errors.dateEnd}</p>}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

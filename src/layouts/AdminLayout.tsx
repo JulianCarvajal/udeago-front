@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { MobileAppFrame } from '@/components/layout/MobileAppFrame'
 import { useAuth } from '@/auth/useAuth'
-import { Eye, LayoutDashboard, LogOut } from 'lucide-react'
+import { CalendarPlus, Eye, LayoutDashboard, LogOut } from 'lucide-react'
 import { disableAdminPreviewMode } from '@/utils/adminPreview'
 
 const ADMIN_NAV_ITEMS = [
@@ -10,6 +10,7 @@ const ADMIN_NAV_ITEMS = [
   { to: '/admin/announcements', label: 'Anuncios' },
   { to: '/admin/events/new', label: 'Nuevo evento' },
   { to: '/admin/announcements/new', label: 'Nuevo anuncio' },
+  { to: '/admin/calendar-jobs', label: 'Cargas Excel' },
   { to: '/admin/access', label: 'Acceso' },
 ]
 
@@ -32,6 +33,10 @@ function getCurrentPageLabel(pathname: string): string {
 
   if (pathname === '/admin/announcements/new') {
     return 'Crear anuncio'
+  }
+
+  if (pathname === '/admin/calendar-jobs') {
+    return 'Carga de invitados'
   }
 
   if (pathname.includes('/admin/events/') && pathname.endsWith('/edit')) {
@@ -77,6 +82,15 @@ export function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              to="/admin/calendar-jobs"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors"
+              title="Abrir carga de invitados"
+            >
+              <CalendarPlus size={14} />
+              <span className="hidden sm:inline">Cargas Excel</span>
+            </Link>
+
             <Link
               to="/?preview=admin"
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors"

@@ -15,6 +15,12 @@ const adminCards = [
     icon: Megaphone,
   },
   {
+    title: 'Cargas Excel',
+    description: 'Sube listas de correos y sigue el avance de invitaciones por evento.',
+    href: '/admin/calendar-jobs',
+    icon: CalendarPlus,
+  },
+  {
     title: 'Nuevo evento',
     description: 'Acceso rápido al flujo de creación de eventos.',
     href: '/admin/events/new',

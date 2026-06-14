@@ -2,8 +2,8 @@ import { mapEventFromApi, mapEventsFromApi } from '@/features/events/mappers/eve
 import type { EventApiDto, EventApiUpsertDto } from '@/features/events/api/event.dto'
 import { apiFetch } from '@/services/api'
 import type { Event } from '@/types/event'
+import { API_BASE_URL } from '@/config/env'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 const EVENTS_ENDPOINT = `${API_BASE_URL}/events`
 
 export class EventApiError extends Error {

@@ -1,7 +1,7 @@
 import { buildAuthSessionFromCallback, buildAuthSessionFromPayload, clearAuthSession, getStoredAuthSession, getStoredAuthToken, saveAuthSession } from '@/auth/auth.session'
 import type { AuthSession } from '@/auth/auth.types'
+import { API_BASE_URL } from '@/config/env'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 const FRONTEND_CALLBACK_PATH = '/admin/auth/callback'
 
 export function getAuthToken(): string | null {

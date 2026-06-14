@@ -1,6 +1,6 @@
 import { apiFetch } from '@/services/api'
+import { API_BASE_URL } from '@/config/env'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 const CATEGORIES_ENDPOINT = `${API_BASE_URL}/categories`
 
 export interface CategoryOption {

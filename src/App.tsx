@@ -14,6 +14,7 @@ import { AdminEventFormPage } from '@/pages/admin/AdminEventFormPage'
 import { AdminAccessPage } from '@/pages/admin/AdminAccessPage'
 import { AdminAnnouncementsPage } from '@/pages/admin/AdminAnnouncementsPage'
 import { AdminAnnouncementFormPage } from '@/pages/admin/AdminAnnouncementFormPage'
+import { AdminCalendarJobsPage } from '@/pages/admin/AdminCalendarJobsPage'
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
           <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
           <Route path="/admin/announcements/new" element={<AdminAnnouncementFormPage />} />
           <Route path="/admin/announcements/:announcementId/edit" element={<AdminAnnouncementFormPage />} />
+          <Route path="/admin/calendar-jobs" element={<AdminCalendarJobsPage />} />
           <Route path="/admin/access" element={<AdminAccessPage />} />
         </Route>
       </Route>
